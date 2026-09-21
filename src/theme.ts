@@ -1,0 +1,16 @@
+export const colors = {
+  navy: '#0B1F3D',
+  navyDeep: '#071422',
+  navyBlob: '#0E2A4A',
+  navyBlobSoft: '#123250',
+  gold: '#F5A524',
+  canvas: '#F4F5F8',
+  ink: '#101828',
+  mute: '#667085',
+  line: '#E4E7EC',
+  white: '#FFFFFF',
+  field: '#FFFFFF',
+  soft: '#F2F4F7',
+  success: '#12B76A',
+  danger: '#F04438',
+};
