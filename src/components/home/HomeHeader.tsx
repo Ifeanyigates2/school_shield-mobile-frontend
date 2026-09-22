@@ -47,7 +47,7 @@ export function HomeHeader({
       </View>
 
       {/* State Preview Switcher */}
-      <View className="flex-row bg-white/10 rounded-2xl p-1 mt-4">
+      {/* <View className="flex-row bg-white/10 rounded-2xl p-1 mt-4">
         {(['no_school', 'upcoming', 'active', 'completed'] as OperationalState[]).map((stateKey) => {
           const isActive = operationalState === stateKey;
           const label =
@@ -76,7 +76,7 @@ export function HomeHeader({
             </Pressable>
           );
         })}
-      </View>
+      </View> */}
     </View>
   );
 }

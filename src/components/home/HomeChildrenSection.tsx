@@ -54,8 +54,7 @@ export function HomeChildrenSection({
                     <Feather
                       name="chevron-right"
                       size={12}
-                      color="#101828',
-"
+                      color="#101828"
                     />
                   </Pressable>
                 </View>
