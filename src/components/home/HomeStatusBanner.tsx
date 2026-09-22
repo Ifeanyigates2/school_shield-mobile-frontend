@@ -62,16 +62,16 @@ export function HomeStatusBanner({
 
   /* Active Drop-off / Codes Live */
   return (
-    <View className="bg-bannerGreen rounded-3xl p-4 border border-bannerGreenBorder mb-4">
+    <View className="bg-[#BFE7D5]/30 rounded-3xl p-4 border border-bannerGreenBorder mb-4">
       <View className="flex-row items-start gap-3">
         <View className="w-6 h-6 rounded-full bg-success items-center justify-center mt-0.5">
           <Feather name="check" size={14} color="#FFFFFF" />
         </View>
         <View className="flex-1">
-          <Text className="text-base font-bold text-bannerGreenText">
+          <Text className="text-lg font-semibold text-bannerGreenText">
             Drop-off is open until 8:30 AM
           </Text>
-          <Text className="text-xs text-emerald-900 leading-5 mt-1">
+          <Text className="text-md text-emerald-900 leading-5 mt-1">
             Amara's code is on this phone. David's sent to Chidinma by SMS.
           </Text>
         </View>

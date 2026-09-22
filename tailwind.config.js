@@ -16,7 +16,7 @@ module.exports = {
         mute: '#667085',
         line: '#E4E7EC',
         soft: '#F2F4F7',
-        success: '#12B76A',
+        success: '#0F6647',
         danger: '#F04438',
         bannerBlue: '#EAF2F8',
         bannerBlueBorder: '#D0E4FA',

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { OperationalState } from './HomeHeader';
 
 export interface HomeRecentActivityProps {
@@ -15,41 +16,41 @@ export function HomeRecentActivity({
   return (
     <View className="mt-4">
       <View className="flex-row justify-between items-center mb-2.5">
-        <Text className="text-[11px] text-black tracking-widest">
+        <Text className="text-sm text-ink tracking-widest">
           RECENT ACTIVITY
         </Text>
         <Pressable onPress={onSeeAll}>
-          <Text className="text-xs font-bold text-navy">See all</Text>
+          <Text className="text-sm font-semibold text-navy">See all</Text>
         </Pressable>
       </View>
 
       {operationalState === 'active' ? (
         /* Dynamic Activity Items for Active Codes State (Figma iPhone 19/27) */
         <View className="bg-white rounded-3xl p-3 border border-line gap-2">
-          <View className="flex-row items-center justify-between p-2 rounded-2xl bg-emerald-50/50">
+          <View className="flex-row items-center justify-between p-2 rounded-2xl ">
             <View className="flex-row items-center gap-3 flex-1">
-              <View className="w-9 h-9 rounded-xl bg-emerald-100 items-center justify-center">
-                <Feather name="file-text" size={16} color="#027A48" />
+              <View className="w-9 h-9 rounded-lg bg-emerald-100 items-center justify-center">
+                <Ionicons name="qr-code-outline" size={16} color="#027A48" />
               </View>
               <View className="flex-1">
-                <Text className="text-xs font-bold text-ink">Code issued for Amara</Text>
+                <Text className="text-md font-bold text-ink">Code issued for Amara</Text>
                 <Text className="text-[11px] text-mute mt-0.5">Drop-off · expires 8:30 AM</Text>
               </View>
             </View>
-            <Text className="text-[11px] font-semibold text-mute">6:45 AM</Text>
+            <Text className="text-sm text-mute">6:45 AM</Text>
           </View>
 
-          <View className="flex-row items-center justify-between p-2 rounded-2xl bg-sky-50/50">
+          <View className="flex-row items-center justify-between p-2 rounded-2xl">
             <View className="flex-row items-center gap-3 flex-1">
-              <View className="w-9 h-9 rounded-xl bg-sky-100 items-center justify-center">
+              <View className="w-9 h-9 rounded-lg bg-sky-100 items-center justify-center">
                 <Feather name="message-square" size={16} color="#026AA2" />
               </View>
               <View className="flex-1">
-                <Text className="text-xs font-bold text-ink">Code sent to Chidinma</Text>
-                <Text className="text-[11px] text-mute mt-0.5">SMS · +234 805 221 4478</Text>
+                <Text className="text-md font-bold text-ink">Code sent to Chidinma</Text>
+                <Text className="text-sm text-mute mt-0.5">SMS · +234 805 221 4478</Text>
               </View>
             </View>
-            <Text className="text-[11px] font-semibold text-mute">6:45 AM</Text>
+            <Text className="text-sm text-mute">6:45 AM</Text>
           </View>
         </View>
       ) : (

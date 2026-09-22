@@ -1,9 +1,9 @@
-import React from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { FigmaAvatar } from '../../components';
-import { CHILDREN, Child } from '../../data/family';
-import { OperationalState } from './HomeHeader';
+import React from "react";
+import { Pressable, Text, View } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { FigmaAvatar } from "../../components";
+import { CHILDREN, Child } from "../../data/family";
+import { OperationalState } from "./HomeHeader";
 
 export interface HomeChildrenSectionProps {
   operationalState: OperationalState;
@@ -22,54 +22,67 @@ export function HomeChildrenSection({
 }: HomeChildrenSectionProps) {
   return (
     <View className="mb-4">
-      {operationalState === 'active' ? (
+      {operationalState === "active" ? (
         /* EXPANDED CARDS FOR CODES LIVE (IPHONE 19 / 27) */
         <View className="gap-3">
           {childrenList.map((child) => {
-            const isAmara = child.id === 'amara';
-            const pickingPerson = isAmara ? 'You' : 'Chidinma';
+            const isAmara = child.id === "amara";
+            const pickingPerson = isAmara ? "You" : "Chidinma";
 
             return (
               <View
                 key={child.id}
-                className="bg-white rounded-[24px] p-4 border border-line shadow-sm"
+                className="bg-white rounded-3xl p-7 border border-line shadow-sm"
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-3 flex-1">
-                    <FigmaAvatar name={child.name} size={48} showStatusDot />
+                    <FigmaAvatar name={child.name} size={55} showStatusDot />
                     <View className="flex-1">
-                      <Text className="text-base font-bold text-ink">{child.name}</Text>
-                      <Text className="text-xs text-mute mt-0.5">
-                        {child.klass} · {child.gate ?? 'Main Gate'}
+                      <Text className="text-lg font-bold text-ink">
+                        {child.name}
+                      </Text>
+                      <Text className="text-md text-mute mt-0.5">
+                        {child.klass} · {child.gate ?? "Main Gate"}
                       </Text>
                     </View>
                   </View>
                   {/* Chevron Action Pill */}
                   <Pressable
-                    className="w-8 h-8 rounded-xl bg-slate-50 items-center justify-center border border-slate-200"
+                    className="w-10 h-10 rounded-xl items-center justify-center text-ink border border-slate-200"
                     onPress={() => onSelectChild(child.id)}
                   >
-                    <Feather name="chevron-right" size={18} color="#667085" />
+                    <Feather
+                      name="chevron-right"
+                      size={12}
+                      color="#101828',
+"
+                    />
                   </Pressable>
                 </View>
 
-                <View className="flex-row justify-between items-end my-3 pt-1">
+             
+
+                <View className="flex-row justify-between items-end my-3 pt-3">
                   <View>
-                    <Text className="text-xs text-mute font-medium">Picking up</Text>
-                    <Text className="text-base font-bold text-ink mt-0.5">{pickingPerson}</Text>
+                    <Text className="text-md text-mute">Picking up</Text>
+                    <Text className="text-base font-bold text-ink mt-0.5">
+                      {pickingPerson}
+                    </Text>
                   </View>
                   <Pressable onPress={() => onViewPlan(child.id)}>
-                    <Text className="text-xs font-bold text-navy underline">
+                    <Text className="text-md font-bold text-navy underline">
                       View Today's plan
                     </Text>
                   </Pressable>
                 </View>
 
                 <Pressable
-                  className="bg-navy h-12 rounded-xl items-center justify-center active:opacity-90"
+                  className="bg-navy h-14 rounded-xl items-center justify-center active:opacity-90"
                   onPress={() => onShowCode(child)}
                 >
-                  <Text className="text-white text-sm font-semibold">Show Code</Text>
+                  <Text className="text-white text-md font-semibold">
+                    Show Code
+                  </Text>
                 </Pressable>
               </View>
             );
@@ -85,9 +98,10 @@ export function HomeChildrenSection({
         /* COMPACT CARDS (IPHONE 13 BEFORE DROP-OFF) */
         <View className="gap-3">
           {childrenList.map((child) => {
-            const isAmara = child.id === 'amara';
-            const dropPerson = isAmara ? 'You' : 'Chidinma';
-            const badgeLabel = operationalState === 'no_school' ? 'NO SCHOOL' : 'AT HOME';
+            const isAmara = child.id === "amara";
+            const dropPerson = isAmara ? "You" : "Chidinma";
+            const badgeLabel =
+              operationalState === "no_school" ? "NO SCHOOL" : "AT HOME";
 
             return (
               <Pressable
@@ -97,18 +111,21 @@ export function HomeChildrenSection({
               >
                 <FigmaAvatar name={child.name} size={46} />
                 <View className="flex-1 ml-3">
-                  <Text className="text-base font-bold text-ink">{child.name}</Text>
-                  <Text className="text-xs text-mute mt-0.5">
-                    {child.klass} · {child.gate ?? 'Main Gate'}
+                  <Text className="text-base font-bold text-ink">
+                    {child.name}
                   </Text>
-                  {operationalState === 'upcoming' && (
-                    <Text className="text-xs text-ink mt-1">
-                      Dropping off: <Text className="font-bold">{dropPerson}</Text>
+                  <Text className="text-sm text-mute mt-0.5">
+                    {child.klass} · {child.gate ?? "Main Gate"}
+                  </Text>
+                  {operationalState === "upcoming" && (
+                    <Text className="text-sm text-ink mt-1">
+                      Dropping off:{" "}
+                      <Text className="font-bold">{dropPerson}</Text>
                     </Text>
                   )}
                 </View>
                 <View className="bg-slate-100 px-2.5 py-1 rounded-xl mr-2">
-                  <Text className="text-[11px] font-bold text-slate-600 tracking-wider">
+                  <Text className="text-[11px] font-bold text-ink tracking-wider">
                     {badgeLabel}
                   </Text>
                 </View>
