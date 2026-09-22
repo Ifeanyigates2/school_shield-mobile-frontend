@@ -23,7 +23,7 @@ export function HomeQuickActions({
           onPress={onOpenHandlers}
         >
           <View className="w-11 h-11 rounded-lg bg-[#0F6647] items-center justify-center mb-2 shadow-xs">
-            <Ionicons name="person-outline" size={20} color="#fff" />
+            <Feather name="users" size={20} color="#fff" />
           </View>
           <Text className="text-xs font-bold text-ink">Handlers</Text>
         </Pressable>
