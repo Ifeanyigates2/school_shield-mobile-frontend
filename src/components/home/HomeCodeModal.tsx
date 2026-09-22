@@ -1,23 +1,28 @@
+import React from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Child } from '../../data/family';
 
-export function HomeCodeModal({
-  child,
-  mode,
-  onToggleMode,
-  onClose,
-  topInset,
-}: {
+export interface HomeCodeModalProps {
+  visible: boolean;
   child: Child | null;
   mode: 'qr' | 'digits';
-  onToggleMode: () => void;
-  onClose: () => void;
   topInset: number;
-}) {
+  onClose: () => void;
+  onToggleMode: () => void;
+}
+
+export function HomeCodeModal({
+  visible,
+  child,
+  mode,
+  topInset,
+  onClose,
+  onToggleMode,
+}: HomeCodeModalProps) {
   return (
     <Modal
-      visible={child !== null}
+      visible={visible}
       transparent
       animationType="fade"
       onRequestClose={onClose}

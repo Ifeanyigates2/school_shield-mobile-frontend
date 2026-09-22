@@ -1,18 +1,21 @@
+import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { OperationalState } from './HomeHeader';
 
+export interface HomeRecentActivityProps {
+  operationalState: OperationalState;
+  onSeeAll: () => void;
+}
+
 export function HomeRecentActivity({
   operationalState,
   onSeeAll,
-}: {
-  operationalState: OperationalState;
-  onSeeAll: () => void;
-}) {
+}: HomeRecentActivityProps) {
   return (
     <View className="mt-4">
       <View className="flex-row justify-between items-center mb-2.5">
-        <Text className="text-[11px] font-extrabold text-mute tracking-widest">
+        <Text className="text-[11px] text-black tracking-widest">
           RECENT ACTIVITY
         </Text>
         <Pressable onPress={onSeeAll}>
@@ -51,9 +54,9 @@ export function HomeRecentActivity({
         </View>
       ) : (
         /* Quiet State Activity Card (Figma iPhone 13) */
-        <View className="bg-white rounded-3xl p-5 border border-line">
-          <Text className="text-sm font-bold text-ink">Nothing since Friday</Text>
-          <Text className="text-xs text-mute mt-1 leading-5">
+        <View className="flex items-center bg-white rounded-3xl p-5 border border-line">
+          <Text className="text-md font-medium text-ink">Nothing since Friday</Text>
+          <Text className="text-sm text-mute mt-1 leading-5">
             Friday's pickups are in Activity if you need them.
           </Text>
         </View>

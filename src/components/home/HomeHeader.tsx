@@ -1,52 +1,46 @@
+import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { FigmaAvatar } from '../../components';
 
 export type OperationalState = 'no_school' | 'upcoming' | 'active' | 'completed';
 
-export function HomeHeader({
-  operationalState,
-  onSelectState,
-  onPressNotifications,
-  topInset,
-}: {
-  operationalState: OperationalState;
-  onSelectState: (state: OperationalState) => void;
-  onPressNotifications: () => void;
+export interface HomeHeaderProps {
   topInset: number;
-}) {
-  const states: { key: OperationalState; label: string }[] = [
-    { key: 'no_school', label: 'No School' },
-    { key: 'upcoming', label: 'At 6:45' },
-    { key: 'active', label: 'Codes Live' },
-    { key: 'completed', label: 'Completed' },
-  ];
+  operationalState: OperationalState;
+  onSelectOperationalState: (state: OperationalState) => void;
+  onOpenNotifications: () => void;
+}
 
+export function HomeHeader({
+  topInset,
+  operationalState,
+  onSelectOperationalState,
+  onOpenNotifications,
+}: HomeHeaderProps) {
   return (
     <View
-      className="bg-navy px-5 pb-5 rounded-b-[32px]"
-      style={{ paddingTop: topInset + 10 }}
+      className="bg-navy p-8 py-12"
+      style={{ paddingTop: topInset + 20 }}
     >
       <View className="flex-row justify-between items-center">
         {/* Profile & School Info */}
         <View className="flex-row items-center gap-3">
-          <FigmaAvatar name="Zara" size={46} />
+          <FigmaAvatar name="Zara" size={50} />
           <View className="justify-center">
-            <Text className="text-slate-400 text-xs font-medium">Good morning, Zara</Text>
-            <Text className="text-white text-xl font-bold tracking-tight mt-0.5">
-              Greenfield Academy
-            </Text>
+            <Text className="text-primaryLight text-sm">Good morning, Zara</Text>
+            <Text className="text-white text-2xl font-bold tracking-tight">Greenfield Academy</Text>
           </View>
         </View>
 
         {/* Notification Bell Button */}
         <Pressable
-          className="w-11 h-11 rounded-full bg-white items-center justify-center relative shadow-sm"
-          onPress={onPressNotifications}
+          className="w-12 h-12 rounded-xl bg-white items-center justify-center relative shadow-sm"
+          onPress={onOpenNotifications}
           hitSlop={8}
         >
           <Feather name="bell" size={20} color="#101828" />
-          <View className="absolute -top-1 -right-1 bg-red-500 w-5 h-5 rounded-full items-center justify-center border-2 border-white">
+          <View className="absolute top-1 right-1 bg-[#B93A3A] w-5 h-5 rounded-full items-center justify-center border-2 border-white">
             <Text className="text-white text-[10px] font-extrabold">2</Text>
           </View>
         </Pressable>
@@ -54,15 +48,23 @@ export function HomeHeader({
 
       {/* State Preview Switcher */}
       <View className="flex-row bg-white/10 rounded-2xl p-1 mt-4">
-        {states.map(({ key, label }) => {
-          const isActive = operationalState === key;
+        {(['no_school', 'upcoming', 'active', 'completed'] as OperationalState[]).map((stateKey) => {
+          const isActive = operationalState === stateKey;
+          const label =
+            stateKey === 'no_school'
+              ? 'No School'
+              : stateKey === 'upcoming'
+              ? 'At 6:45'
+              : stateKey === 'active'
+              ? 'Codes Live'
+              : 'Completed';
           return (
             <Pressable
-              key={key}
+              key={stateKey}
               className={`flex-1 py-1.5 rounded-xl items-center justify-center ${
                 isActive ? 'bg-white' : ''
               }`}
-              onPress={() => onSelectState(key)}
+              onPress={() => onSelectOperationalState(stateKey)}
             >
               <Text
                 className={`text-[11px] font-semibold ${

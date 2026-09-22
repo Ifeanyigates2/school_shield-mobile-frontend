@@ -1,26 +1,31 @@
+import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { FigmaAvatar } from '../../components';
 import { CHILDREN, Child } from '../../data/family';
 import { OperationalState } from './HomeHeader';
 
-export function HomeChildrenSection({
-  operationalState,
-  onShowCode,
-  onSelectChild,
-  onViewPlan,
-}: {
+export interface HomeChildrenSectionProps {
   operationalState: OperationalState;
-  onShowCode: (child: Child) => void;
+  childrenList?: Child[];
   onSelectChild: (childId: string) => void;
   onViewPlan: (childId: string) => void;
-}) {
+  onShowCode: (child: Child) => void;
+}
+
+export function HomeChildrenSection({
+  operationalState,
+  childrenList = CHILDREN,
+  onSelectChild,
+  onViewPlan,
+  onShowCode,
+}: HomeChildrenSectionProps) {
   return (
     <View className="mb-4">
       {operationalState === 'active' ? (
         /* EXPANDED CARDS FOR CODES LIVE (IPHONE 19 / 27) */
         <View className="gap-3">
-          {CHILDREN.map((child) => {
+          {childrenList.map((child) => {
             const isAmara = child.id === 'amara';
             const pickingPerson = isAmara ? 'You' : 'Chidinma';
 
@@ -79,7 +84,7 @@ export function HomeChildrenSection({
       ) : (
         /* COMPACT CARDS (IPHONE 13 BEFORE DROP-OFF) */
         <View className="gap-3">
-          {CHILDREN.map((child) => {
+          {childrenList.map((child) => {
             const isAmara = child.id === 'amara';
             const dropPerson = isAmara ? 'You' : 'Chidinma';
             const badgeLabel = operationalState === 'no_school' ? 'NO SCHOOL' : 'AT HOME';

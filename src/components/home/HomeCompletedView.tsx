@@ -1,18 +1,21 @@
+import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { FigmaAvatar } from '../../components';
 
-export function HomeCompletedView({
-  onManagePickup,
-  onGoHome,
-  onViewActivity,
-  topInset,
-}: {
+export interface HomeCompletedViewProps {
+  topInset: number;
+  onViewActivity: () => void;
   onManagePickup: () => void;
   onGoHome: () => void;
-  onViewActivity: () => void;
-  topInset: number;
-}) {
+}
+
+export function HomeCompletedView({
+  topInset,
+  onViewActivity,
+  onManagePickup,
+  onGoHome,
+}: HomeCompletedViewProps) {
   return (
     <View
       className="flex-1 bg-navyDeep px-6 justify-between pb-8"
@@ -59,7 +62,7 @@ export function HomeCompletedView({
 
       <View className="w-full gap-3">
         <Pressable
-          className="w-full bg-white h-14 rounded-2xl items-center justify-center shadow-lg active:opacity-90"
+          className="w-full bg-white h-14 rounded-2xl items-center justify-center shadow-lg"
           onPress={onManagePickup}
         >
           <Text className="text-navy font-bold text-base">Manage Pickup</Text>

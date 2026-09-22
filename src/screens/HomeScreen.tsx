@@ -1,27 +1,33 @@
 import { useState } from 'react';
-import { Platform, Pressable, ScrollView, StatusBar, Text, View } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  Text,
+  View,
+} from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Feather } from '@expo/vector-icons';
 import { BottomTabBar } from '../components';
 import { Child } from '../data/family';
 import { colors } from '../theme';
-import {
-  HomeChildrenSection,
-  HomeCodeModal,
-  HomeCompletedView,
-  HomeHeader,
-  HomeNotificationsModal,
-  HomePlanModal,
-  HomeQuickActions,
-  HomeRecentActivity,
-  HomeStatusBanner,
-  OperationalState,
-} from '../components/home';
 import { ChildrenScreen } from './ChildrenScreen';
 import { HandlersFlow } from './HandlersFlow';
 import { PickupFlow } from './PickupFlow';
+import {
+  HomeHeader,
+  HomeStatusBanner,
+  HomeChildrenSection,
+  HomeQuickActions,
+  HomeRecentActivity,
+  HomeCompletedView,
+  HomeCodeModal,
+  HomeModals,
+  OperationalState,
+} from '../components/home';
 
-export { OperationalState };
+export type { OperationalState };
 
 export function HomeScreen() {
   const [activeTab, setActiveTab] = useState<'home' | 'children' | 'activity' | 'more'>('home');
@@ -55,6 +61,11 @@ export function HomeScreen() {
   }
 
   const topInset = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 48;
+
+  const handlePlanDropoff = () => {
+    setSelectedChildId('amara');
+    setSubflow('pickup');
+  };
 
   return (
     <View className="flex-1 bg-canvas">
@@ -101,15 +112,15 @@ export function HomeScreen() {
           </Pressable>
         </View>
       ) : operationalState === 'completed' ? (
-        /* DROP-OFF COMPLETED STATE (RIGHTMOST FIGMA FRAME) */
+        /* DROP-OFF COMPLETED STATE */
         <HomeCompletedView
           topInset={topInset}
+          onViewActivity={() => setActiveTab('activity')}
           onManagePickup={() => {
             setSelectedChildId('amara');
             setSubflow('pickup');
           }}
           onGoHome={() => setOperationalState('active')}
-          onViewActivity={() => setActiveTab('activity')}
         />
       ) : (
         /* HOME ACTIVE, UPCOMING, & NO SCHOOL STATES */
@@ -118,32 +129,23 @@ export function HomeScreen() {
           contentContainerStyle={{ paddingBottom: 32 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* HEADER COMPONENT */}
+          {/* HEADER */}
           <HomeHeader
             topInset={topInset}
             operationalState={operationalState}
-            onSelectState={(state) => setOperationalState(state)}
-            onPressNotifications={() => setShowNotifications(true)}
+            onSelectOperationalState={(state) => setOperationalState(state)}
+            onOpenNotifications={() => setShowNotifications(true)}
           />
 
-          {/* MAIN BODY CONTENT */}
+          {/* BODY CONTENT */}
           <View className="px-4 pt-4">
-            {/* STATUS BANNER COMPONENT */}
             <HomeStatusBanner
               operationalState={operationalState}
-              onActionPress={() => {
-                setSelectedChildId('amara');
-                setSubflow('pickup');
-              }}
+              onManageDropoff={handlePlanDropoff}
             />
 
-            {/* CHILDREN CARDS SECTION COMPONENT */}
             <HomeChildrenSection
               operationalState={operationalState}
-              onShowCode={(child) => {
-                setCodeModalChild(child);
-                setCodeOverlayMode('qr');
-              }}
               onSelectChild={(childId) => {
                 setSelectedChildId(childId);
                 setActiveTab('children');
@@ -152,9 +154,12 @@ export function HomeScreen() {
                 setSelectedChildId(childId);
                 setShowPlanModal(true);
               }}
+              onShowCode={(child) => {
+                setCodeModalChild(child);
+                setCodeOverlayMode('qr');
+              }}
             />
 
-            {/* QUICK ACTIONS COMPONENT */}
             <HomeQuickActions
               onOpenHandlers={() => setSubflow('handlers')}
               onOpenException={() => {
@@ -164,7 +169,6 @@ export function HomeScreen() {
               onOpenPlan={() => setShowPlanModal(true)}
             />
 
-            {/* RECENT ACTIVITY COMPONENT */}
             <HomeRecentActivity
               operationalState={operationalState}
               onSeeAll={() => setActiveTab('activity')}
@@ -179,25 +183,22 @@ export function HomeScreen() {
         onTabPress={(tab) => setActiveTab(tab)}
       />
 
-      {/* OVERLAY MODAL (QR CODE & 4-DIGIT PIN) */}
+      {/* CODE OVERLAY MODAL */}
       <HomeCodeModal
+        visible={codeModalChild !== null}
         child={codeModalChild}
         mode={codeOverlayMode}
-        onToggleMode={() => setCodeOverlayMode(codeOverlayMode === 'qr' ? 'digits' : 'qr')}
-        onClose={() => setCodeModalChild(null)}
         topInset={topInset}
+        onClose={() => setCodeModalChild(null)}
+        onToggleMode={() => setCodeOverlayMode((prev) => (prev === 'qr' ? 'digits' : 'qr'))}
       />
 
-      {/* NOTIFICATIONS MODAL */}
-      <HomeNotificationsModal
-        visible={showNotifications}
-        onClose={() => setShowNotifications(false)}
-      />
-
-      {/* TODAY'S PLAN MODAL */}
-      <HomePlanModal
-        visible={showPlanModal}
-        onClose={() => setShowPlanModal(false)}
+      {/* NOTIFICATIONS & PLAN MODALS */}
+      <HomeModals
+        showNotifications={showNotifications}
+        onCloseNotifications={() => setShowNotifications(false)}
+        showPlanModal={showPlanModal}
+        onClosePlanModal={() => setShowPlanModal(false)}
       />
     </View>
   );

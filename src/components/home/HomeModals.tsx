@@ -1,14 +1,14 @@
+import React from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { PrimaryButton } from '../../components';
 
-export function HomeNotificationsModal({
-  visible,
-  onClose,
-}: {
+export interface NotificationsModalProps {
   visible: boolean;
   onClose: () => void;
-}) {
+}
+
+export function NotificationsModal({ visible, onClose }: NotificationsModalProps) {
   return (
     <Modal
       visible={visible}
@@ -69,13 +69,12 @@ export function HomeNotificationsModal({
   );
 }
 
-export function HomePlanModal({
-  visible,
-  onClose,
-}: {
+export interface TodaysPlanModalProps {
   visible: boolean;
   onClose: () => void;
-}) {
+}
+
+export function TodaysPlanModal({ visible, onClose }: TodaysPlanModalProps) {
   return (
     <Modal
       visible={visible}
@@ -135,5 +134,32 @@ export function HomePlanModal({
         </View>
       </View>
     </Modal>
+  );
+}
+
+export interface HomeModalsProps {
+  showNotifications: boolean;
+  onCloseNotifications: () => void;
+  showPlanModal: boolean;
+  onClosePlanModal: () => void;
+}
+
+export function HomeModals({
+  showNotifications,
+  onCloseNotifications,
+  showPlanModal,
+  onClosePlanModal,
+}: HomeModalsProps) {
+  return (
+    <>
+      <NotificationsModal
+        visible={showNotifications}
+        onClose={onCloseNotifications}
+      />
+      <TodaysPlanModal
+        visible={showPlanModal}
+        onClose={onClosePlanModal}
+      />
+    </>
   );
 }
