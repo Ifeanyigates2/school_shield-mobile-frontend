@@ -166,27 +166,27 @@ export function HomeScreen() {
         >
           {/* FIGMA TOP NAV / HEADER */}
           <View
-            className="bg-navy px-5 pb-5 rounded-b-[32px]"
-            style={{ paddingTop: topInset + 10 }}
+            className="bg-navy p-8 py-12"
+            style={{ paddingTop: topInset + 20 }}
           >
             <View className="flex-row justify-between items-center">
               {/* Profile & School Info */}
               <View className="flex-row items-center gap-3">
-                <FigmaAvatar name="Zara" size={46} />
+                <FigmaAvatar name="Zara" size={50} />
                 <View className="justify-center">
-                  <Text className="text-slate-400 text-xs font-medium">Good morning, Zara</Text>
-                  <Text className="text-white text-xl font-bold tracking-tight mt-0.5">Greenfield Academy</Text>
+                  <Text className="text-primaryLight text-sm">Good morning, Zara</Text>
+                  <Text className="text-white text-2xl font-bold tracking-tight ">Greenfield Academy</Text>
                 </View>
               </View>
 
               {/* Notification Bell Button */}
               <Pressable
-                className="w-11 h-11 rounded-full bg-white items-center justify-center relative shadow-sm"
+                className="w-12 h-12 rounded-xl bg-white items-center justify-center relative shadow-sm"
                 onPress={() => setShowNotifications(true)}
                 hitSlop={8}
               >
                 <Feather name="bell" size={20} color="#101828" />
-                <View className="absolute -top-1 -right-1 bg-red-500 w-5 h-5 rounded-full items-center justify-center border-2 border-white">
+                <View className="absolute top-1 right-1 bg-[#B93A3A] w-5 h-5 rounded-full items-center justify-center border-2 border-white">
                   <Text className="text-white text-[10px] font-extrabold">2</Text>
                 </View>
               </Pressable>
@@ -231,12 +231,12 @@ export function HomeScreen() {
             {operationalState === 'no_school' ? (
               <View className="bg-bannerBlue rounded-3xl p-4 border border-bannerBlueBorder mb-4">
                 <View className="flex-row items-start gap-3">
-                  <View className="w-6 h-6 rounded-full bg-navy items-center justify-center mt-0.5">
+                  <View className="w-6 h-6 rounded-full bg-[#1C5A85] items-center justify-center mt-0.5">
                     <Text className="text-white text-xs font-bold italic">i</Text>
                   </View>
                   <View className="flex-1">
-                    <Text className="text-base font-bold text-ink">No school today</Text>
-                    <Text className="text-xs text-slate-600 leading-5 mt-1">
+                    <Text className="text-base font-bold text-[#1C5A85]">No school today</Text>
+                    <Text className="text-sm text-[#1C5A85] leading-5 mt-1">
                       Next school day is Monday 7 September.{'\n'}Drop-off opens 7:00 AM at Main Gate.
                     </Text>
                   </View>
@@ -413,11 +413,11 @@ export function HomeScreen() {
               <View className="flex-row gap-3">
                 {/* Handlers Tile */}
                 <Pressable
-                  className="flex-1 bg-actionGreen rounded-3xl py-4 items-center border border-actionGreenBorder"
+                  className="flex-1 bg-[#E8F7F0] rounded-3xl py-4 items-center border border-actionGreenBorder"
                   onPress={() => setSubflow('handlers')}
                 >
-                  <View className="w-11 h-11 rounded-full bg-white items-center justify-center mb-2 shadow-xs">
-                    <Ionicons name="person-outline" size={20} color="#1B5E20" />
+                  <View className="w-11 h-11 rounded-lg bg-[#0F6647] items-center justify-center mb-2 shadow-xs">
+                    <Ionicons name="person-outline" size={20} color="#fff" />
                   </View>
                   <Text className="text-xs font-bold text-ink">Handlers</Text>
                 </Pressable>
@@ -430,8 +430,8 @@ export function HomeScreen() {
                     setSubflow('pickup');
                   }}
                 >
-                  <View className="w-11 h-11 rounded-full bg-white items-center justify-center mb-2 shadow-xs">
-                    <Feather name="clock" size={20} color="#E65100" />
+                  <View className="w-11 h-11 rounded-lg bg-[#D9822B] items-center justify-center mb-2 shadow-xs">
+                    <Feather name="clock" size={20} color="#fff" />
                   </View>
                   <Text className="text-xs font-bold text-ink">Exception</Text>
                 </Pressable>
@@ -441,8 +441,8 @@ export function HomeScreen() {
                   className="flex-1 bg-actionBlue rounded-3xl py-4 items-center border border-actionBlueBorder"
                   onPress={() => setShowPlanModal(true)}
                 >
-                  <View className="w-11 h-11 rounded-full bg-white items-center justify-center mb-2 shadow-xs">
-                    <Feather name="calendar" size={20} color="#0D47A1" />
+                  <View className="w-11 h-11 rounded-lg bg-navy items-center justify-center mb-2 shadow-xs">
+                    <Feather name="calendar" size={20} color="#fff" />
                   </View>
                   <Text className="text-xs font-bold text-ink">Today's plan</Text>
                 </Pressable>
