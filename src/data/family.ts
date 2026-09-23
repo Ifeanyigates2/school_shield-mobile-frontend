@@ -94,6 +94,41 @@ export function firstChildForHandler(handler: Handler | undefined, fallback: str
   return handler?.childIds[0] ?? fallback;
 }
 
+export type NotificationPrefs = {
+  push: boolean;
+  sms: boolean;
+  whatsapp: boolean;
+  checkin: boolean;
+  reminder: boolean;
+  picked: boolean;
+  auth: boolean;
+};
+
+export type GuardianSession = {
+  name: string;
+  phone: string;
+  email: string;
+  relationship: 'Parent' | 'Guardian';
+  hasPhoto: boolean;
+  childIds: string[];
+  handler: Handler | null;
+  notifications: NotificationPrefs;
+};
+
+export function firstName(full: string) {
+  return full.trim().split(/\s+/)[0] || '';
+}
+
+export function mergeHandlers(base: Handler[], extra: Handler | null) {
+  if (!extra?.name.trim()) return base;
+  const extraPhone = extra.phone.replace(/\s/g, '');
+  const match = base.find((h) => h.phone.replace(/\s/g, '') === extraPhone);
+  if (match) {
+    return base.map((h) => (h.id === match.id ? { ...h, ...extra, id: match.id } : h));
+  }
+  return [{ ...extra, id: extra.id || 'onboarded' }, ...base];
+}
+
 export function collectorProfile(collector: Collector, handlers: Handler[]) {
   if (collector.kind === 'onetime') {
     return {

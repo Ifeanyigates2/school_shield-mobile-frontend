@@ -1,18 +1,11 @@
 import { useState } from 'react';
-import {
-  Platform,
-  Pressable,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Field, InitialsAvatar, PrimaryButton } from '../components';
 import { useFamily } from '../data/FamilyContext';
 import { CHILDREN, Handler, childNames } from '../data/family';
 import { colors } from '../theme';
+import { useAndroidBack } from '../useAndroidBack';
 
 type Page = 'list' | 'detail' | 'edit';
 
@@ -29,6 +22,30 @@ export function HandlersFlow({
   const [page, setPage] = useState<Page>('list');
   const [id, setId] = useState(initialHandlerId);
   const current = handlers.find((h) => h.id === id) ?? handlers[0];
+  const hardwareBack = () => {
+    if (page === 'edit') setPage('detail');
+    else if (page === 'detail') setPage('list');
+    else onBack();
+  };
+  useAndroidBack(hardwareBack);
+
+  const confirmRemove = (handler: Handler, after: () => void) => {
+    Alert.alert(
+      'Remove handler?',
+      `${handler.name.split(' ')[0]} will be taken off your list. If they have an active pickup today, it is cancelled and the Main Gate is told immediately.`,
+      [
+        { text: 'Keep them', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => {
+            setHandlers((list) => list.filter((h) => h.id !== handler.id));
+            after();
+          },
+        },
+      ],
+    );
+  };
 
   const top = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 54;
 
@@ -64,10 +81,7 @@ export function HandlersFlow({
             ),
           )
         }
-        onRemove={() => {
-          setHandlers((list) => list.filter((h) => h.id !== current.id));
-          setPage('list');
-        }}
+        onRemove={() => confirmRemove(current, () => setPage('list'))}
       />
     );
   }
@@ -116,7 +130,7 @@ export function HandlersFlow({
               <Pressable style={styles.iconBtn} onPress={() => { setId(h.id); setPage('edit'); }}>
                 <Text>✎</Text>
               </Pressable>
-              <Pressable style={styles.iconDanger} onPress={() => { setId(h.id); setPage('detail'); }}>
+              <Pressable style={styles.iconDanger} onPress={() => confirmRemove(h, () => {})}>
                 <Text>🗑</Text>
               </Pressable>
             </View>

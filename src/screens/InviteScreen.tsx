@@ -14,13 +14,16 @@ import {
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Field, InitialsAvatar, PrimaryButton } from '../components';
+import { GuardianSession, Handler } from '../data/family';
 import { colors } from '../theme';
+import { useAndroidBack } from '../useAndroidBack';
 
 const CHILDREN = [
   { id: 'amara', name: 'Amara Okafor', meta: 'Primary 4A · Greenfield Academy', color: '#1C1917' },
   { id: 'david', name: 'David Okafor', meta: 'Primary 1B · Greenfield Academy', color: '#BE185D' },
 ];
 
+// TODO(ship): replace demo codes 1111 / 0000 with the SMS verification API.
 const OTP_OK = (code: string) => code === '1111' || code === '0000';
 
 type Step = 1 | 2 | 3 | 'photo' | 'preview' | 4 | 5 | 6 | 'handler1' | 'handler2' | 'notify' | 'done';
@@ -33,7 +36,7 @@ export function InviteScreen({
   onDone,
 }: {
   onBack: () => void;
-  onDone: () => void;
+  onDone: (session: GuardianSession) => void;
 }) {
   const [step, setStep] = useState<Step>(1);
   const [selected, setSelected] = useState<string[]>(CHILDREN.map((c) => c.id));
@@ -104,6 +107,43 @@ export function InviteScreen({
     else onBack();
   };
 
+  useAndroidBack(goBack);
+
+  const session = (): GuardianSession => {
+    const saved: Handler | null = savedHandler
+      ? {
+          id: 'onboarded',
+          name: handlerName.trim() || savedHandler,
+          relationship: handlerRel,
+          phone: handlerPhone,
+          status: 'ACTIVE',
+          pickup: pickupOn,
+          dropoff: dropoffOn,
+          childIds: handlerKids,
+          days: recurring ? 'Any school day' : 'Today only',
+          color: '#C45C6A',
+        }
+      : null;
+    return {
+      name: name.trim() || 'Zara Okafor',
+      phone,
+      email,
+      relationship,
+      hasPhoto,
+      childIds: selected,
+      handler: saved,
+      notifications: {
+        push: pushOn,
+        sms: smsOn,
+        whatsapp: waOn,
+        checkin: checkinOn,
+        reminder: reminderOn,
+        picked: pickedOn,
+        auth: authOn,
+      },
+    };
+  };
+
   const stepNumber =
     step === 'photo' || step === 'preview' ? 3 : typeof step === 'number' ? step : 6;
   const photoNav = step === 'photo' || step === 'preview';
@@ -121,7 +161,7 @@ export function InviteScreen({
           childrenNames={CHILDREN.filter((c) => selected.includes(c.id)).map((c) => c.name.split(' ')[0]).join(', ')}
           handler={savedHandler}
           alerts={alertsLabel || 'Off'}
-          onHome={onDone}
+          onHome={() => onDone(session())}
         />
       ) : (
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>

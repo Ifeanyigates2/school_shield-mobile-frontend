@@ -11,6 +11,7 @@ import {
   eligibleHandlers,
 } from '../data/family';
 import { colors } from '../theme';
+import { useAndroidBack } from '../useAndroidBack';
 
 type Page = 'week' | 'choose' | 'onetime' | 'review' | 'authorized' | 'change' | 'states';
 
@@ -37,6 +38,17 @@ export function PickupFlow({
   const [oneRel, setOneRel] = useState('Uncle');
   const [onePhoto, setOnePhoto] = useState(false);
   const [collector, setCollector] = useState<Collector>({ kind: 'saved', handlerId });
+  const hardwareBack = () => {
+    if (page === 'choose') setPage('week');
+    else if (page === 'onetime') setPage('choose');
+    else if (page === 'review') setPage(collector.kind === 'onetime' ? 'onetime' : 'choose');
+    else if (page === 'authorized') setPage('week');
+    else if (page === 'states') setPage('authorized');
+    else if (page === 'change') setPage('week');
+    else onBack();
+  };
+  useAndroidBack(hardwareBack);
+
   const allowed = useMemo(
     () => eligibleHandlers(handlers, child.id, tab),
     [handlers, child.id, tab],

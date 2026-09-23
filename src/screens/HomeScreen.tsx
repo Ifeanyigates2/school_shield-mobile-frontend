@@ -14,7 +14,7 @@ export type GuardianPage =
   | 'pickup';
 
 export function HomeScreen() {
-  const { children, handlers } = useFamily();
+  const { guardianName, children, handlers } = useFamily();
   const [page, setPage] = useState<GuardianPage>('home');
   const [childId, setChildId] = useState('amara');
   const [handlerId, setHandlerId] = useState('chidinma');
@@ -59,7 +59,7 @@ export function HomeScreen() {
       <ExpoStatusBar style="dark" />
       <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: top }]}>
         <Text style={styles.greet}>Good morning,</Text>
-        <Text style={styles.name}>Zara</Text>
+        <Text style={styles.name}>{guardianName}</Text>
         <Text style={styles.body}>Your children and approved handlers are ready for pickup.</Text>
 
         {children.map((child) => (
