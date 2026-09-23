@@ -56,7 +56,7 @@ export function InviteScreen({
   const [showConfirm, setShowConfirm] = useState(false);
   const [otpOk, setOtpOk] = useState(false);
   const [handlerName, setHandlerName] = useState('');
-  const [handlerPhone, setHandlerPhone] = useState('805 221 4478');
+  const [handlerPhone, setHandlerPhone] = useState('');
   const [handlerRel, setHandlerRel] = useState('Nanny');
   const [handlerPhoto, setHandlerPhoto] = useState(false);
   const [pickupOn, setPickupOn] = useState(true);
@@ -119,7 +119,7 @@ export function InviteScreen({
           status: 'ACTIVE',
           pickup: pickupOn,
           dropoff: dropoffOn,
-          childIds: handlerKids,
+          childIds: handlerKids.filter((id) => selected.includes(id)),
           days: recurring ? 'Any school day' : 'Today only',
           color: '#C45C6A',
         }
@@ -228,7 +228,17 @@ export function InviteScreen({
                   You are being added as a guardian for both children. Only Greenfield Academy can add or remove a child.
                 </Text>
               </View>
-              <PrimaryButton label="Confirm children" enabled={selected.length > 0} onPress={() => setStep(3)} />
+              <PrimaryButton
+                label="Confirm children"
+                enabled={selected.length > 0}
+                onPress={() => {
+                  setHandlerKids((ids) => {
+                    const kept = ids.filter((id) => selected.includes(id));
+                    return kept.length > 0 ? kept : selected;
+                  });
+                  setStep(3);
+                }}
+              />
               <View style={{ height: 12 }} />
               <PrimaryButton outline label="Something isn't right" onPress={() => setWrong(true)} />
             </>
@@ -523,7 +533,7 @@ export function InviteScreen({
               <ToggleRow title="Recurring authorisation" body="Mon, Wed and Fri without asking you each time" value={recurring} onValue={setRecurring} />
               <View style={styles.infoCard}>
                 <Text style={styles.fieldLabel}>Which children?</Text>
-                {CHILDREN.map((child) => {
+                {CHILDREN.filter((child) => selected.includes(child.id)).map((child) => {
                   const on = handlerKids.includes(child.id);
                   return (
                     <Pressable

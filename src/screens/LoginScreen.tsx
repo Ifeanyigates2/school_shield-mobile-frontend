@@ -23,6 +23,7 @@ export function LoginScreen({
   onSuccess: () => void;
 }) {
   const [email, setEmail] = useState('');
+  // TODO(ship): drop the hard-coded "Welcome back, Zara" title and the demo password pre-fill.
   const [password, setPassword] = useState('password');
   const [hidden, setHidden] = useState(true);
   const [error, setError] = useState<string | null>(null);

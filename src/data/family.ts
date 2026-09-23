@@ -78,8 +78,8 @@ export type Collector =
   | { kind: 'saved'; handlerId: string }
   | { kind: 'onetime'; name: string; phone: string; relationship: string; color: string };
 
-export const childNames = (ids: string[]) =>
-  CHILDREN.filter((c) => ids.includes(c.id)).map((c) => c.name.split(' ')[0]).join(' and ');
+export const childNames = (ids: string[], list: Child[] = CHILDREN) =>
+  list.filter((c) => ids.includes(c.id)).map((c) => c.name.split(' ')[0]).join(' and ');
 
 export function eligibleHandlers(handlers: Handler[], childId: string, job: Job) {
   return handlers.filter(
@@ -90,7 +90,14 @@ export function eligibleHandlers(handlers: Handler[], childId: string, job: Job)
   );
 }
 
-export function firstChildForHandler(handler: Handler | undefined, fallback: string) {
+export function firstChildForHandler(
+  handler: Handler | undefined,
+  fallback: string,
+  allowedIds?: string[],
+) {
+  if (allowedIds?.length) {
+    return handler?.childIds.find((id) => allowedIds.includes(id)) ?? fallback;
+  }
   return handler?.childIds[0] ?? fallback;
 }
 
@@ -122,6 +129,7 @@ export function firstName(full: string) {
 export function mergeHandlers(base: Handler[], extra: Handler | null) {
   if (!extra?.name.trim()) return base;
   const extraPhone = extra.phone.replace(/\s/g, '');
+  if (!extraPhone) return [{ ...extra, id: extra.id || 'onboarded' }, ...base];
   const match = base.find((h) => h.phone.replace(/\s/g, '') === extraPhone);
   if (match) {
     return base.map((h) => (h.id === match.id ? { ...h, ...extra, id: match.id } : h));

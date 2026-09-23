@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { ReactNode, useState } from 'react';
+import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Field, InitialsAvatar, PrimaryButton } from '../components';
 import { useFamily } from '../data/FamilyContext';
-import { CHILDREN, Handler, childNames } from '../data/family';
+import { Handler, childNames } from '../data/family';
 import { colors } from '../theme';
 import { useAndroidBack } from '../useAndroidBack';
 
@@ -18,39 +18,57 @@ export function HandlersFlow({
   onBack: () => void;
   onOpenPickup: (handlerId: string) => void;
 }) {
-  const { handlers, setHandlers } = useFamily();
+  const { handlers, setHandlers, children } = useFamily();
   const [page, setPage] = useState<Page>('list');
   const [id, setId] = useState(initialHandlerId);
+  const [pendingRemove, setPendingRemove] = useState<{ handler: Handler; goList: boolean } | null>(null);
   const current = handlers.find((h) => h.id === id) ?? handlers[0];
   const hardwareBack = () => {
+    if (pendingRemove) {
+      setPendingRemove(null);
+      return;
+    }
     if (page === 'edit') setPage('detail');
     else if (page === 'detail') setPage('list');
     else onBack();
   };
   useAndroidBack(hardwareBack);
 
-  const confirmRemove = (handler: Handler, after: () => void) => {
-    Alert.alert(
-      'Remove handler?',
-      `${handler.name.split(' ')[0]} will be taken off your list. If they have an active pickup today, it is cancelled and the Main Gate is told immediately.`,
-      [
-        { text: 'Keep them', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => {
-            setHandlers((list) => list.filter((h) => h.id !== handler.id));
-            after();
-          },
-        },
-      ],
-    );
+  const confirmRemove = (handler: Handler, goList: boolean) => {
+    setPendingRemove({ handler, goList });
   };
+
+  const finishRemove = () => {
+    if (!pendingRemove) return;
+    setHandlers((list) => list.filter((h) => h.id !== pendingRemove.handler.id));
+    if (pendingRemove.goList) setPage('list');
+    setPendingRemove(null);
+  };
+
+  const wrap = (node: ReactNode) => (
+    <View style={{ flex: 1 }}>
+      {node}
+      {pendingRemove ? (
+        <View style={styles.modalWrap}>
+          <Pressable style={styles.modalDim} onPress={() => setPendingRemove(null)} />
+          <View style={styles.modalCard}>
+            <Text style={styles.name}>Remove handler?</Text>
+            <Text style={[styles.meta, { marginTop: 8, marginBottom: 16 }]}>
+              {pendingRemove.handler.name.split(' ')[0]} will be taken off your list. If they have an active pickup today, it is cancelled and the Main Gate is told immediately.
+            </Text>
+            <PrimaryButton outline label="Keep them" onPress={() => setPendingRemove(null)} />
+            <View style={{ height: 10 }} />
+            <PrimaryButton danger label="Remove" onPress={finishRemove} />
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
 
   const top = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 54;
 
   if (page === 'edit' && current) {
-    return (
+    return wrap(
       <EditHandler
         handler={current}
         onCancel={() => setPage('detail')}
@@ -58,12 +76,12 @@ export function HandlersFlow({
           setHandlers((list) => list.map((h) => (h.id === next.id ? next : h)));
           setPage('detail');
         }}
-      />
+      />,
     );
   }
 
   if (page === 'detail' && current) {
-    return (
+    return wrap(
       <HandlerDetail
         handler={current}
         onBack={() => setPage('list')}
@@ -81,12 +99,12 @@ export function HandlersFlow({
             ),
           )
         }
-        onRemove={() => confirmRemove(current, () => setPage('list'))}
-      />
+        onRemove={() => confirmRemove(current, true)}
+      />,
     );
   }
 
-  return (
+  return wrap(
     <View style={styles.root}>
       <ExpoStatusBar style="dark" />
       <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: top }]}>
@@ -96,7 +114,7 @@ export function HandlersFlow({
           <Text style={styles.navAction}>Add</Text>
         </View>
         <Text style={styles.lead}>
-          People you have approved to collect Amara or David. Only these three, plus you, can be given a code.
+          People you have approved to collect {childNames(children.map((c) => c.id), children) || 'your children'}. Only people on this list, plus you, can be given a code.
         </Text>
         {handlers.map((h) => (
           <View key={h.id} style={styles.card}>
@@ -115,7 +133,7 @@ export function HandlersFlow({
             <View style={styles.chips}>
               {h.pickup ? <Chip text={h.dropoff ? 'Pickup' : 'Pickup only'} /> : null}
               {h.dropoff ? <Chip text="Drop-off" /> : null}
-              <Chip text={childNames(h.childIds) + (h.childIds.length === 1 ? ' only' : '')} />
+              <Chip text={childNames(h.childIds, children) + (h.childIds.filter((id) => children.some((c) => c.id === id)).length === 1 ? ' only' : '')} />
               <Chip text={h.days} />
             </View>
             <View style={styles.actions}>
@@ -130,7 +148,7 @@ export function HandlersFlow({
               <Pressable style={styles.iconBtn} onPress={() => { setId(h.id); setPage('edit'); }}>
                 <Text>✎</Text>
               </Pressable>
-              <Pressable style={styles.iconDanger} onPress={() => confirmRemove(h, () => {})}>
+              <Pressable style={styles.iconDanger} onPress={() => confirmRemove(h, false)}>
                 <Text>🗑</Text>
               </Pressable>
             </View>
@@ -159,6 +177,8 @@ function HandlerDetail({
   onPause: () => void;
   onRemove: () => void;
 }) {
+  const { children } = useFamily();
+  const allowedKids = handler.childIds.filter((id) => children.some((c) => c.id === id));
   const top = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 54;
   return (
     <View style={styles.root}>
@@ -187,7 +207,7 @@ function HandlerDetail({
           <Text style={styles.kicker}>WHAT SHE MAY DO</Text>
           <Perm ok={handler.pickup} title="Collect at pickup" right={handler.pickup ? 'Allowed' : 'Off'} />
           <Perm ok={handler.dropoff} title="Bring in at drop-off" right={handler.dropoff ? 'Allowed' : 'Off'} />
-          <Perm ok={handler.childIds.length > 0} title={childNames(handler.childIds)} right={handler.childIds.length === 2 ? 'Both children' : 'One child'} />
+          <Perm ok={allowedKids.length > 0} title={childNames(handler.childIds, children)} right={allowedKids.length === 2 ? 'Both children' : 'One child'} />
           <Perm ok={false} title="Recurring authorization" right="Off" />
         </View>
         <View style={styles.card}>
@@ -217,6 +237,7 @@ function EditHandler({
   onCancel: () => void;
   onSave: (h: Handler) => void;
 }) {
+  const { children } = useFamily();
   const [name, setName] = useState(handler.name);
   const [phone, setPhone] = useState(handler.phone);
   const [rel, setRel] = useState(handler.relationship);
@@ -256,7 +277,7 @@ function EditHandler({
         <Text style={styles.meta}>Nanny · Driver · Grandparent · Relative · Family friend</Text>
         <View style={styles.card}>
           <Text style={styles.kicker}>WHICH CHILDREN SHE MAY COLLECT</Text>
-          {CHILDREN.map((c) => {
+          {children.map((c) => {
             const on = kids.includes(c.id);
             return (
               <Pressable
@@ -280,7 +301,15 @@ function EditHandler({
         </View>
         <PrimaryButton
           label="Save changes"
-          onPress={() => onSave({ ...handler, name, phone, relationship: rel, childIds: kids })}
+          onPress={() =>
+            onSave({
+              ...handler,
+              name,
+              phone,
+              relationship: rel,
+              childIds: kids.filter((id) => children.some((c) => c.id === id)),
+            })
+          }
         />
         <View style={{ height: 10 }} />
         <PrimaryButton outline label="Discard changes" onPress={onCancel} />
@@ -352,4 +381,7 @@ const styles = StyleSheet.create({
   boxOn: { backgroundColor: colors.navy, borderColor: colors.navy },
   amber: { backgroundColor: '#FFF6E5', borderRadius: 14, padding: 12, marginVertical: 16 },
   amberText: { color: '#B54708', fontSize: 13, lineHeight: 18 },
+  modalWrap: { ...StyleSheet.absoluteFill, justifyContent: 'flex-end', zIndex: 20 },
+  modalDim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(16,24,40,0.45)' },
+  modalCard: { backgroundColor: colors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36 },
 });

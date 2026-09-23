@@ -16,7 +16,8 @@ export type GuardianPage =
 export function HomeScreen() {
   const { guardianName, children, handlers } = useFamily();
   const [page, setPage] = useState<GuardianPage>('home');
-  const [childId, setChildId] = useState('amara');
+  const [childId, setChildId] = useState(children[0]?.id ?? 'amara');
+  const sessionChildIds = children.map((c) => c.id);
   const [handlerId, setHandlerId] = useState('chidinma');
   const [pickupStart, setPickupStart] = useState<'week' | 'choose'>('week');
   const [pickupKey, setPickupKey] = useState(0);
@@ -29,7 +30,7 @@ export function HomeScreen() {
         onOpenPickup={(id) => {
           const handler = handlers.find((h) => h.id === id);
           setHandlerId(id);
-          setChildId(firstChildForHandler(handler, childId));
+          setChildId(firstChildForHandler(handler, children[0]?.id ?? childId, sessionChildIds));
           setPickupStart('choose');
           setPickupKey((n) => n + 1);
           setPage('pickup');
