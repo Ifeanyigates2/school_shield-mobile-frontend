@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Field, InitialsAvatar, PrimaryButton } from '../components';
-import { CHILDREN, HANDLERS, Handler, childNames } from '../data/family';
+import { useFamily } from '../data/FamilyContext';
+import { CHILDREN, Handler, childNames } from '../data/family';
 import { colors } from '../theme';
 
 type Page = 'list' | 'detail' | 'edit';
@@ -22,10 +23,10 @@ export function HandlersFlow({
 }: {
   initialHandlerId: string;
   onBack: () => void;
-  onOpenPickup: () => void;
+  onOpenPickup: (handlerId: string) => void;
 }) {
+  const { handlers, setHandlers } = useFamily();
   const [page, setPage] = useState<Page>('list');
-  const [handlers, setHandlers] = useState(HANDLERS);
   const [id, setId] = useState(initialHandlerId);
   const current = handlers.find((h) => h.id === id) ?? handlers[0];
 
@@ -52,7 +53,15 @@ export function HandlersFlow({
         onEdit={() => setPage('edit')}
         onPause={() =>
           setHandlers((list) =>
-            list.map((h) => (h.id === current.id ? { ...h, status: h.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE' } : h)),
+            list.map((h) =>
+              h.id === current.id
+                ? {
+                    ...h,
+                    status: h.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
+                    authorizedToday: h.status === 'ACTIVE' ? false : h.authorizedToday,
+                  }
+                : h,
+            ),
           )
         }
         onRemove={() => {
@@ -97,7 +106,12 @@ export function HandlersFlow({
             </View>
             <View style={styles.actions}>
               <View style={{ flex: 1 }}>
-                <PrimaryButton outline label="Authorize" onPress={onOpenPickup} />
+                <PrimaryButton
+                  outline
+                  label="Authorize"
+                  enabled={h.status === 'ACTIVE' && h.pickup}
+                  onPress={() => onOpenPickup(h.id)}
+                />
               </View>
               <Pressable style={styles.iconBtn} onPress={() => { setId(h.id); setPage('edit'); }}>
                 <Text>✎</Text>

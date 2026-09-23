@@ -72,5 +72,45 @@ export const WEEK: { day: string; handlerId: string }[] = [
   { day: 'Fri', handlerId: 'aisha' },
 ];
 
+export type Job = 'pickup' | 'dropoff';
+
+export type Collector =
+  | { kind: 'saved'; handlerId: string }
+  | { kind: 'onetime'; name: string; phone: string; relationship: string; color: string };
+
 export const childNames = (ids: string[]) =>
   CHILDREN.filter((c) => ids.includes(c.id)).map((c) => c.name.split(' ')[0]).join(' and ');
+
+export function eligibleHandlers(handlers: Handler[], childId: string, job: Job) {
+  return handlers.filter(
+    (h) =>
+      h.status === 'ACTIVE' &&
+      h.childIds.includes(childId) &&
+      (job === 'pickup' ? h.pickup : h.dropoff),
+  );
+}
+
+export function firstChildForHandler(handler: Handler | undefined, fallback: string) {
+  return handler?.childIds[0] ?? fallback;
+}
+
+export function collectorProfile(collector: Collector, handlers: Handler[]) {
+  if (collector.kind === 'onetime') {
+    return {
+      name: collector.name,
+      phone: collector.phone,
+      relationship: collector.relationship,
+      color: collector.color,
+      firstName: collector.name.split(' ')[0] || collector.name,
+    };
+  }
+  const handler = handlers.find((h) => h.id === collector.handlerId);
+  const name = handler?.name ?? 'Unknown';
+  return {
+    name,
+    phone: handler?.phone ?? '',
+    relationship: handler?.relationship ?? '',
+    color: handler?.color ?? '#0B1F3D',
+    firstName: name.split(' ')[0] || name,
+  };
+}

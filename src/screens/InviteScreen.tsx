@@ -234,9 +234,9 @@ export function InviteScreen({
               </Text>
               <View style={styles.cameraWell}>
                 <View style={styles.cameraCircle}>
-                  <Text style={styles.cameraIcon}>📷</Text>
+                  <Text style={styles.cameraIcon}>{hasPhoto ? '✓' : '📷'}</Text>
                 </View>
-                <Text style={styles.photoEmpty}>No photo yet</Text>
+                <Text style={styles.photoEmpty}>{hasPhoto ? 'Photo added' : 'No photo yet'}</Text>
                 <Text style={styles.hintCenter}>Face clearly visible, no sunglasses, daylight if you can.</Text>
               </View>
               <View style={styles.rowBtns}>
@@ -246,7 +246,6 @@ export function InviteScreen({
                     onPress={() => {
                       setHasPhoto(true);
                       setUploadFailed(false);
-                      setStep('preview');
                     }}
                   />
                 </View>
@@ -257,7 +256,6 @@ export function InviteScreen({
                     onPress={() => {
                       setHasPhoto(true);
                       setUploadFailed(false);
-                      setStep('preview');
                     }}
                   />
                 </View>
@@ -267,7 +265,7 @@ export function InviteScreen({
                   Continue stays disabled until a photo is saved. Required for every guardian and every saved handler.
                 </Text>
               </View>
-              <PrimaryButton label="Continue" enabled={false} onPress={() => {}} />
+              <PrimaryButton label="Continue" enabled={hasPhoto} onPress={() => setStep('preview')} />
             </>
           ) : null}
 
@@ -284,7 +282,7 @@ export function InviteScreen({
               </View>
               <View style={styles.rowBtns}>
                 <View style={{ flex: 1 }}>
-                  <PrimaryButton outline label="Retake" onPress={() => setStep('photo')} />
+                  <PrimaryButton outline label="Retake" onPress={() => { setHasPhoto(false); setStep('photo'); }} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <PrimaryButton
