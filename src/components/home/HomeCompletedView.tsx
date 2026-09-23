@@ -37,7 +37,7 @@ export function HomeCompletedView({
         <View className="w-full bg-slate-800/60 rounded-3xl p-5 mt-8 border border-slate-700/60">
           <View className="flex-row justify-between items-center py-3 border-b border-slate-700/40">
             <View className="flex-row items-center gap-3">
-              <FigmaAvatar name="Amara Okafor" size={36} />
+              {/* <FigmaAvatar name="Amara Okafor" size={36} /> */}
               <Text className="text-white font-semibold text-base">Amara</Text>
             </View>
             <Text className="text-slate-300 font-medium text-sm">7:48 AM | Mrs Sam</Text>
@@ -45,7 +45,7 @@ export function HomeCompletedView({
 
           <View className="flex-row justify-between items-center py-3">
             <View className="flex-row items-center gap-3">
-              <FigmaAvatar name="David Okafor" size={36} />
+              {/* <FigmaAvatar name="David Okafor" size={36} /> */}
               <Text className="text-white font-semibold text-base">David</Text>
             </View>
             <Text className="text-slate-300 font-medium text-sm">7:52 AM | Mrs Sam</Text>

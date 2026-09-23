@@ -2,9 +2,17 @@ import { Tabs } from 'expo-router';
 import { PlatformPressable } from 'expo-router/react-navigation';
 import { Feather } from '@expo/vector-icons';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/src/theme';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
+  // Provide generous space so tab buttons never hide behind Android navigation buttons (or iOS home indicator)
+  const bottomInset = Platform.OS === 'android' ? Math.max(insets.bottom, 24) : insets.bottom;
+  const paddingBottom = Platform.OS === 'android' ? bottomInset + 12 : Math.max(insets.bottom, 20);
+  const height = 54 + paddingBottom;
+
   return (
     <Tabs
       screenOptions={{
@@ -23,8 +31,13 @@ export default function TabLayout() {
           borderTopColor: colors.line,
           borderTopWidth: 1,
           paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 12,
-          height: Platform.OS === 'ios' ? 84 : 64,
+          paddingBottom: paddingBottom,
+          height: height,
+          elevation: 12,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 10,
         },
         tabBarLabelStyle: {
           fontSize: 11,
