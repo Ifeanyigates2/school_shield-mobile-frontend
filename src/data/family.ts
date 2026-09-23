@@ -9,7 +9,6 @@ export type Handler = {
   childIds: string[];
   days: string;
   color: string;
-  authorizedToday?: boolean;
 };
 
 export type Child = {
@@ -36,7 +35,6 @@ export const HANDLERS: Handler[] = [
     childIds: ['amara', 'david'],
     days: 'Mon, Wed, Fri',
     color: '#C45C6A',
-    authorizedToday: true,
   },
   {
     id: 'emeka',
@@ -64,19 +62,120 @@ export const HANDLERS: Handler[] = [
   },
 ];
 
-export const WEEK: { day: string; handlerId: string }[] = [
-  { day: 'Mon', handlerId: 'chidinma' },
-  { day: 'Tues', handlerId: 'chidinma' },
-  { day: 'Wed', handlerId: 'emeka' },
-  { day: 'Thurs', handlerId: 'chidinma' },
-  { day: 'Fri', handlerId: 'aisha' },
-];
-
 export type Job = 'pickup' | 'dropoff';
 
 export type Collector =
   | { kind: 'saved'; handlerId: string }
   | { kind: 'onetime'; name: string; phone: string; relationship: string; color: string };
+
+export const SCHOOL_DAYS = ['Mon', 'Tues', 'Wed', 'Thurs', 'Fri'] as const;
+
+export type WeekSlot = { day: string; handlerId: string | null };
+
+export type WeekPlans = Record<string, Record<Job, WeekSlot[]>>;
+
+export const WEEK_PLANS: WeekPlans = {
+  amara: {
+    pickup: [
+      { day: 'Mon', handlerId: 'chidinma' },
+      { day: 'Tues', handlerId: 'chidinma' },
+      { day: 'Wed', handlerId: 'emeka' },
+      { day: 'Thurs', handlerId: 'chidinma' },
+      { day: 'Fri', handlerId: 'aisha' },
+    ],
+    dropoff: [
+      { day: 'Mon', handlerId: 'chidinma' },
+      { day: 'Tues', handlerId: 'chidinma' },
+      { day: 'Wed', handlerId: 'chidinma' },
+      { day: 'Thurs', handlerId: 'chidinma' },
+      { day: 'Fri', handlerId: 'chidinma' },
+    ],
+  },
+  david: {
+    pickup: [
+      { day: 'Mon', handlerId: 'chidinma' },
+      { day: 'Tues', handlerId: 'chidinma' },
+      { day: 'Wed', handlerId: null },
+      { day: 'Thurs', handlerId: 'chidinma' },
+      { day: 'Fri', handlerId: 'aisha' },
+    ],
+    dropoff: [
+      { day: 'Mon', handlerId: 'chidinma' },
+      { day: 'Tues', handlerId: 'chidinma' },
+      { day: 'Wed', handlerId: 'chidinma' },
+      { day: 'Thurs', handlerId: 'chidinma' },
+      { day: 'Fri', handlerId: 'chidinma' },
+    ],
+  },
+};
+
+export const WEEK = WEEK_PLANS.amara.pickup;
+
+export type Authorization = {
+  id: string;
+  childId: string;
+  job: Job;
+  collector: Collector;
+  createdLabel: string;
+  status: 'active' | 'cancelled';
+};
+
+export const INITIAL_AUTHORIZATIONS: Authorization[] = [
+  {
+    id: 'auth-amara-pickup',
+    childId: 'amara',
+    job: 'pickup',
+    collector: { kind: 'saved', handlerId: 'chidinma' },
+    createdLabel: 'Created 6:40 AM · code delivered by SMS · not yet used',
+    status: 'active',
+  },
+];
+
+export function activeAuthorization(list: Authorization[], childId: string, job: Job) {
+  return list.find((a) => a.childId === childId && a.job === job && a.status === 'active');
+}
+
+export function replaceAuthorization(list: Authorization[], next: Authorization) {
+  return [
+    ...list.map((a) =>
+      a.childId === next.childId && a.job === next.job && a.status === 'active'
+        ? { ...a, status: 'cancelled' as const }
+        : a,
+    ),
+    next,
+  ];
+}
+
+export function cancelAuthorization(list: Authorization[], childId: string, job: Job) {
+  return list.map((a) =>
+    a.childId === childId && a.job === job && a.status === 'active' ? { ...a, status: 'cancelled' as const } : a,
+  );
+}
+
+export function cancelHandlerAuthorizations(list: Authorization[], handlerId: string) {
+  return list.map((a) =>
+    a.status === 'active' && a.collector.kind === 'saved' && a.collector.handlerId === handlerId
+      ? { ...a, status: 'cancelled' as const }
+      : a,
+  );
+}
+
+export function handlerHasAuth(list: Authorization[], handlerId: string) {
+  return list.some(
+    (a) => a.status === 'active' && a.collector.kind === 'saved' && a.collector.handlerId === handlerId,
+  );
+}
+
+export function setWeekHandler(plans: WeekPlans, childId: string, job: Job, day: string, handlerId: string | null): WeekPlans {
+  const childPlan = plans[childId] ?? { pickup: WEEK_PLANS.amara.pickup, dropoff: WEEK_PLANS.amara.dropoff };
+  return {
+    ...plans,
+    [childId]: {
+      ...childPlan,
+      [job]: childPlan[job].map((row) => (row.day === day ? { ...row, handlerId } : row)),
+    },
+  };
+}
 
 export const childNames = (ids: string[], list: Child[] = CHILDREN) =>
   list.filter((c) => ids.includes(c.id)).map((c) => c.name.split(' ')[0]).join(' and ');
@@ -124,6 +223,10 @@ export type GuardianSession = {
 
 export function firstName(full: string) {
   return full.trim().split(/\s+/)[0] || '';
+}
+
+export function formatToday() {
+  return new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
 export function mergeHandlers(base: Handler[], extra: Handler | null) {

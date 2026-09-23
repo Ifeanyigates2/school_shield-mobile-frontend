@@ -225,7 +225,7 @@ export function InviteScreen({
               })}
               <View style={styles.note}>
                 <Text style={styles.noteText}>
-                  You are being added as a guardian for both children. Only Greenfield Academy can add or remove a child.
+                  You are being added as a guardian for {selected.length === 2 ? 'both children' : CHILDREN.find((c) => selected.includes(c.id))?.name.split(' ')[0] || 'this child'}. Only Greenfield Academy can add or remove a child.
                 </Text>
               </View>
               <PrimaryButton
@@ -250,7 +250,9 @@ export function InviteScreen({
               <Text style={styles.body}>Gate staff see your name and relationship when they verify a handover.</Text>
               <Field label="Full name" value={name} onChangeText={setName} autoCapitalize="words" />
               <View style={{ height: 16 }} />
-              <Text style={styles.fieldLabel}>Relationship to Amara and David</Text>
+              <Text style={styles.fieldLabel}>
+                Relationship to {CHILDREN.filter((c) => selected.includes(c.id)).map((c) => c.name.split(' ')[0]).join(' and ') || 'your children'}
+              </Text>
               <View style={styles.pills}>
                 {(['Parent', 'Guardian'] as const).map((item) => {
                   const on = relationship === item;
@@ -280,7 +282,7 @@ export function InviteScreen({
             <>
               <Text style={[styles.h1, styles.h1Left]}>Add your photo</Text>
               <Text style={styles.body}>
-                Gate staff match this face before releasing Amara or David. It is required — you cannot continue without it.
+                Gate staff match this face before releasing {CHILDREN.filter((c) => selected.includes(c.id)).map((c) => c.name.split(' ')[0]).join(' or ') || 'your child'}. It is required — you cannot continue without it.
               </Text>
               <View style={styles.cameraWell}>
                 <View style={styles.cameraCircle}>
@@ -503,7 +505,7 @@ export function InviteScreen({
                   <Text style={styles.plusText}>{handlerPhoto ? '✓' : '+'}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.photoTitle}>{handlerPhoto ? 'Photo added' : 'Take her photo · required'}</Text>
+                  <Text style={styles.photoTitle}>{handlerPhoto ? 'Photo added' : 'Take their photo · required'}</Text>
                   <Text style={styles.hint}>Required. Staff match this face before releasing your child.</Text>
                 </View>
               </Pressable>
@@ -518,16 +520,16 @@ export function InviteScreen({
           {step === 'handler2' ? (
             <>
               <View style={styles.handlerHead}>
-                <InitialsAvatar name={handlerName || 'Chidinma Okafor'} size={48} color="#C45C6A" />
+                <InitialsAvatar name={handlerName.trim() || 'New handler'} size={48} color="#C45C6A" />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.childName}>{handlerName || 'Chidinma Okafor'}</Text>
+                  <Text style={styles.childName}>{handlerName.trim() || 'New handler'}</Text>
                   <Text style={styles.childMeta}>
                     {handlerRel} · +234 {handlerPhone}
                   </Text>
                 </View>
               </View>
               <Text style={[styles.h1, styles.h1Left]}>What may {firstHandler} do?</Text>
-              <Text style={styles.body}>You can change this any time. Every handover she makes is recorded.</Text>
+              <Text style={styles.body}>You can change this any time. Every handover they make is recorded.</Text>
               <ToggleRow title="Pickup" body="May collect at the end of the school day" value={pickupOn} onValue={setPickupOn} />
               <ToggleRow title="Drop-off" body="May bring your children in the morning" value={dropoffOn} onValue={setDropoffOn} />
               <ToggleRow title="Recurring authorisation" body="Mon, Wed and Fri without asking you each time" value={recurring} onValue={setRecurring} />
@@ -551,7 +553,7 @@ export function InviteScreen({
               </View>
               <View style={styles.note}>
                 <Text style={styles.noteText}>
-                  Greenfield Academy allows recurring authorizations. {firstHandler} will get a fresh code each school day she is assigned — codes are never reused.
+                  Greenfield Academy allows recurring authorizations. {firstHandler} will get a fresh code each school day they are assigned — codes are never reused.
                 </Text>
               </View>
               <PrimaryButton

@@ -1,11 +1,14 @@
 import { Dispatch, ReactNode, SetStateAction, createContext, useContext, useMemo, useState } from 'react';
 import {
+  Authorization,
   CHILDREN,
   Child,
   GuardianSession,
   HANDLERS,
   Handler,
-  WEEK,
+  INITIAL_AUTHORIZATIONS,
+  WEEK_PLANS,
+  WeekPlans,
   firstName,
   mergeHandlers,
 } from './family';
@@ -15,7 +18,10 @@ type FamilyState = {
   children: Child[];
   handlers: Handler[];
   setHandlers: Dispatch<SetStateAction<Handler[]>>;
-  week: typeof WEEK;
+  weekPlans: WeekPlans;
+  setWeekPlans: Dispatch<SetStateAction<WeekPlans>>;
+  authorizations: Authorization[];
+  setAuthorizations: Dispatch<SetStateAction<Authorization[]>>;
   session: GuardianSession | null;
 };
 
@@ -32,10 +38,22 @@ export function FamilyProvider({
     ? CHILDREN.filter((c) => session.childIds.includes(c.id))
     : CHILDREN;
   const [handlers, setHandlers] = useState(() => mergeHandlers(HANDLERS, session?.handler ?? null));
+  const [weekPlans, setWeekPlans] = useState(WEEK_PLANS);
+  const [authorizations, setAuthorizations] = useState(INITIAL_AUTHORIZATIONS);
   const guardianName = firstName(session?.name ?? '') || 'Zara';
   const value = useMemo(
-    () => ({ guardianName, children: kids, handlers, setHandlers, week: WEEK, session }),
-    [guardianName, kids, handlers, session],
+    () => ({
+      guardianName,
+      children: kids,
+      handlers,
+      setHandlers,
+      weekPlans,
+      setWeekPlans,
+      authorizations,
+      setAuthorizations,
+      session,
+    }),
+    [guardianName, kids, handlers, weekPlans, authorizations, session],
   );
   return <FamilyContext.Provider value={value}>{children}</FamilyContext.Provider>;
 }
