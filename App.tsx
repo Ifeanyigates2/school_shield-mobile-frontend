@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FamilyProvider } from './src/data/FamilyContext';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { InviteScreen } from './src/screens/InviteScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
@@ -24,7 +25,11 @@ export default function App() {
   }
 
   if (screen === 'home') {
-    return <HomeScreen />;
+    return (
+      <FamilyProvider>
+        <HomeScreen />
+      </FamilyProvider>
+    );
   }
 
   if (screen === 'login') {

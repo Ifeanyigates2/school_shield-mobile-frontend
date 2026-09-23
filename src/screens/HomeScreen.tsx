@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { InitialsAvatar, PrimaryButton } from '../components';
-import { CHILDREN, HANDLERS } from '../data/family';
+import { useFamily } from '../data/FamilyContext';
+import { eligibleHandlers, firstChildForHandler } from '../data/family';
 import { colors } from '../theme';
 import { HandlersFlow } from './HandlersFlow';
 import { PickupFlow } from './PickupFlow';
@@ -13,16 +14,26 @@ export type GuardianPage =
   | 'pickup';
 
 export function HomeScreen() {
+  const { children, handlers } = useFamily();
   const [page, setPage] = useState<GuardianPage>('home');
   const [childId, setChildId] = useState('amara');
   const [handlerId, setHandlerId] = useState('chidinma');
+  const [pickupStart, setPickupStart] = useState<'week' | 'choose'>('week');
+  const [pickupKey, setPickupKey] = useState(0);
 
   if (page === 'handlers') {
     return (
       <HandlersFlow
         initialHandlerId={handlerId}
         onBack={() => setPage('home')}
-        onOpenPickup={() => setPage('pickup')}
+        onOpenPickup={(id) => {
+          const handler = handlers.find((h) => h.id === id);
+          setHandlerId(id);
+          setChildId(firstChildForHandler(handler, childId));
+          setPickupStart('choose');
+          setPickupKey((n) => n + 1);
+          setPage('pickup');
+        }}
       />
     );
   }
@@ -30,7 +41,11 @@ export function HomeScreen() {
   if (page === 'pickup') {
     return (
       <PickupFlow
+        key={pickupKey}
         childId={childId}
+        handlerId={handlerId}
+        startAt={pickupStart}
+        onSelectHandler={setHandlerId}
         onBack={() => setPage('home')}
         onHandlers={() => setPage('handlers')}
       />
@@ -38,6 +53,7 @@ export function HomeScreen() {
   }
 
   const top = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) + 12 : 56;
+  const activeCount = handlers.filter((h) => h.status === 'ACTIVE').length;
   return (
     <View style={styles.root}>
       <ExpoStatusBar style="dark" />
@@ -46,12 +62,16 @@ export function HomeScreen() {
         <Text style={styles.name}>Zara</Text>
         <Text style={styles.body}>Your children and approved handlers are ready for pickup.</Text>
 
-        {CHILDREN.map((child) => (
+        {children.map((child) => (
           <Pressable
             key={child.id}
             style={styles.card}
             onPress={() => {
+              const next = eligibleHandlers(handlers, child.id, 'pickup')[0];
               setChildId(child.id);
+              if (next) setHandlerId(next.id);
+              setPickupStart('week');
+              setPickupKey((n) => n + 1);
               setPage('pickup');
             }}
           >
@@ -68,15 +88,12 @@ export function HomeScreen() {
           <Text style={styles.kicker}>HANDLERS</Text>
           <Text style={styles.cardTitle}>People who may collect</Text>
           <Text style={styles.meta}>
-            {HANDLERS.filter((h) => h.status === 'ACTIVE').length} active · {HANDLERS.length} saved
+            {activeCount} active · {handlers.length} saved
           </Text>
           <View style={{ height: 14 }} />
           <PrimaryButton
             label="View handlers"
-            onPress={() => {
-              setHandlerId('chidinma');
-              setPage('handlers');
-            }}
+            onPress={() => setPage('handlers')}
           />
         </View>
       </ScrollView>
