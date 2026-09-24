@@ -449,3 +449,5 @@ const styles = StyleSheet.create({
   input: { flex: 1, fontSize: 16, paddingVertical: 14 },
   prefix: { color: colors.ink, fontSize: 16, fontWeight: '600', marginRight: 8 },
 });
+
+export { HomeRecentActivity, RecentActivity } from './components/RecentActivity';
