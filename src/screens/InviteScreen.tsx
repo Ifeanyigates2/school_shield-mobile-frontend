@@ -15,13 +15,16 @@ import {
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Feather } from '@expo/vector-icons';
 import { Field, InitialsAvatar, PrimaryButton } from '../components';
+import { GuardianSession, Handler } from '../data/family';
 import { colors } from '../theme';
+import { useAndroidBack } from '../useAndroidBack';
 
 const CHILDREN = [
   { id: 'amara', name: 'Amara Okafor', meta: 'Primary 4A · Greenfield Academy', color: '#1C1917' },
   { id: 'david', name: 'David Okafor', meta: 'Primary 1B · Greenfield Academy', color: '#BE185D' },
 ];
 
+// TODO(ship): replace demo codes 1111 / 0000 with the SMS verification API.
 const OTP_OK = (code: string) => code === '1111' || code === '0000';
 
 type Step = 1 | 2 | 3 | 'photo' | 'preview' | 4 | 5 | 6 | 'handler1' | 'handler2' | 'notify' | 'done';
@@ -34,7 +37,7 @@ export function InviteScreen({
   onDone,
 }: {
   onBack: () => void;
-  onDone: () => void;
+  onDone: (session: GuardianSession) => void;
 }) {
   const [step, setStep] = useState<Step>(1);
   const [selected, setSelected] = useState<string[]>(CHILDREN.map((c) => c.id));
@@ -54,7 +57,7 @@ export function InviteScreen({
   const [showConfirm, setShowConfirm] = useState(false);
   const [otpOk, setOtpOk] = useState(false);
   const [handlerName, setHandlerName] = useState('');
-  const [handlerPhone, setHandlerPhone] = useState('805 221 4478');
+  const [handlerPhone, setHandlerPhone] = useState('');
   const [handlerRel, setHandlerRel] = useState('Nanny');
   const [handlerPhoto, setHandlerPhoto] = useState(false);
   const [pickupOn, setPickupOn] = useState(true);
@@ -105,6 +108,43 @@ export function InviteScreen({
     else onBack();
   };
 
+  useAndroidBack(goBack);
+
+  const session = (): GuardianSession => {
+    const saved: Handler | null = savedHandler
+      ? {
+          id: 'onboarded',
+          name: handlerName.trim() || savedHandler,
+          relationship: handlerRel,
+          phone: handlerPhone,
+          status: 'ACTIVE',
+          pickup: pickupOn,
+          dropoff: dropoffOn,
+          childIds: handlerKids.filter((id) => selected.includes(id)),
+          days: recurring ? 'Any school day' : 'Today only',
+          color: '#C45C6A',
+        }
+      : null;
+    return {
+      name: name.trim() || 'Zara Okafor',
+      phone,
+      email,
+      relationship,
+      hasPhoto,
+      childIds: selected,
+      handler: saved,
+      notifications: {
+        push: pushOn,
+        sms: smsOn,
+        whatsapp: waOn,
+        checkin: checkinOn,
+        reminder: reminderOn,
+        picked: pickedOn,
+        auth: authOn,
+      },
+    };
+  };
+
   const stepNumber =
     step === 'photo' || step === 'preview' ? 3 : typeof step === 'number' ? step : 6;
   const photoNav = step === 'photo' || step === 'preview';
@@ -122,7 +162,7 @@ export function InviteScreen({
           childrenNames={CHILDREN.filter((c) => selected.includes(c.id)).map((c) => c.name.split(' ')[0]).join(', ')}
           handler={savedHandler}
           alerts={alertsLabel || 'Off'}
-          onHome={onDone}
+          onHome={() => onDone(session())}
         />
       ) : (
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
@@ -186,10 +226,20 @@ export function InviteScreen({
               })}
               <View style={styles.note}>
                 <Text style={styles.noteText}>
-                  You are being added as a guardian for both children. Only Greenfield Academy can add or remove a child.
+                  You are being added as a guardian for {selected.length === 2 ? 'both children' : CHILDREN.find((c) => selected.includes(c.id))?.name.split(' ')[0] || 'this child'}. Only Greenfield Academy can add or remove a child.
                 </Text>
               </View>
-              <PrimaryButton label="Confirm children" enabled={selected.length > 0} onPress={() => setStep(3)} />
+              <PrimaryButton
+                label="Confirm children"
+                enabled={selected.length > 0}
+                onPress={() => {
+                  setHandlerKids((ids) => {
+                    const kept = ids.filter((id) => selected.includes(id));
+                    return kept.length > 0 ? kept : selected;
+                  });
+                  setStep(3);
+                }}
+              />
               <View style={{ height: 12 }} />
               <PrimaryButton outline label="Something isn't right" onPress={() => setWrong(true)} />
             </>
@@ -201,7 +251,9 @@ export function InviteScreen({
               <Text style={styles.body}>Gate staff see your name and relationship when they verify a handover.</Text>
               <Field label="Full name" value={name} onChangeText={setName} autoCapitalize="words" />
               <View style={{ height: 16 }} />
-              <Text style={styles.fieldLabel}>Relationship to Amara and David</Text>
+              <Text style={styles.fieldLabel}>
+                Relationship to {CHILDREN.filter((c) => selected.includes(c.id)).map((c) => c.name.split(' ')[0]).join(' and ') || 'your children'}
+              </Text>
               <View style={styles.pills}>
                 {(['Parent', 'Guardian'] as const).map((item) => {
                   const on = relationship === item;
@@ -231,13 +283,13 @@ export function InviteScreen({
             <>
               <Text style={[styles.h1, styles.h1Left]}>Add your photo</Text>
               <Text style={styles.body}>
-                Gate staff match this face before releasing Amara or David. It is required — you cannot continue without it.
+                Gate staff match this face before releasing {CHILDREN.filter((c) => selected.includes(c.id)).map((c) => c.name.split(' ')[0]).join(' or ') || 'your child'}. It is required — you cannot continue without it.
               </Text>
               <View style={styles.cameraWell}>
                 <View style={styles.cameraCircle}>
-                  <Text style={styles.cameraIcon}>📷</Text>
+                  <Text style={styles.cameraIcon}>{hasPhoto ? '✓' : '📷'}</Text>
                 </View>
-                <Text style={styles.photoEmpty}>No photo yet</Text>
+                <Text style={styles.photoEmpty}>{hasPhoto ? 'Photo added' : 'No photo yet'}</Text>
                 <Text style={styles.hintCenter}>Face clearly visible, no sunglasses, daylight if you can.</Text>
               </View>
               <View style={styles.rowBtns}>
@@ -248,7 +300,6 @@ export function InviteScreen({
                     onPress={() => {
                       setHasPhoto(true);
                       setUploadFailed(false);
-                      setStep('preview');
                     }}
                   />
                 </View>
@@ -260,7 +311,6 @@ export function InviteScreen({
                     onPress={() => {
                       setHasPhoto(true);
                       setUploadFailed(false);
-                      setStep('preview');
                     }}
                   />
                 </View>
@@ -270,7 +320,7 @@ export function InviteScreen({
                   Continue stays disabled until a photo is saved. Required for every guardian and every saved handler.
                 </Text>
               </View>
-              <PrimaryButton label="Continue" enabled={false} onPress={() => {}} />
+              <PrimaryButton label="Continue" enabled={hasPhoto} onPress={() => setStep('preview')} />
             </>
           ) : null}
 
@@ -287,7 +337,7 @@ export function InviteScreen({
               </View>
               <View style={styles.rowBtns}>
                 <View style={{ flex: 1 }}>
-                  <PrimaryButton outline label="Retake" onPress={() => setStep('photo')} />
+                  <PrimaryButton outline label="Retake" onPress={() => { setHasPhoto(false); setStep('photo'); }} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <PrimaryButton
@@ -458,7 +508,7 @@ export function InviteScreen({
                   <Text style={styles.plusText}>{handlerPhoto ? '✓' : '+'}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.photoTitle}>{handlerPhoto ? 'Photo added' : 'Take her photo · required'}</Text>
+                  <Text style={styles.photoTitle}>{handlerPhoto ? 'Photo added' : 'Take their photo · required'}</Text>
                   <Text style={styles.hint}>Required. Staff match this face before releasing your child.</Text>
                 </View>
               </Pressable>
@@ -473,22 +523,22 @@ export function InviteScreen({
           {step === 'handler2' ? (
             <>
               <View style={styles.handlerHead}>
-                <InitialsAvatar name={handlerName || 'Chidinma Okafor'} size={48} color="#C45C6A" />
+                <InitialsAvatar name={handlerName.trim() || 'New handler'} size={48} color="#C45C6A" />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.childName}>{handlerName || 'Chidinma Okafor'}</Text>
+                  <Text style={styles.childName}>{handlerName.trim() || 'New handler'}</Text>
                   <Text style={styles.childMeta}>
                     {handlerRel} · +234 {handlerPhone}
                   </Text>
                 </View>
               </View>
               <Text style={[styles.h1, styles.h1Left]}>What may {firstHandler} do?</Text>
-              <Text style={styles.body}>You can change this any time. Every handover she makes is recorded.</Text>
+              <Text style={styles.body}>You can change this any time. Every handover they make is recorded.</Text>
               <ToggleRow title="Pickup" body="May collect at the end of the school day" value={pickupOn} onValue={setPickupOn} />
               <ToggleRow title="Drop-off" body="May bring your children in the morning" value={dropoffOn} onValue={setDropoffOn} />
               <ToggleRow title="Recurring authorisation" body="Mon, Wed and Fri without asking you each time" value={recurring} onValue={setRecurring} />
               <View style={styles.infoCard}>
                 <Text style={styles.fieldLabel}>Which children?</Text>
-                {CHILDREN.map((child) => {
+                {CHILDREN.filter((child) => selected.includes(child.id)).map((child) => {
                   const on = handlerKids.includes(child.id);
                   return (
                     <Pressable
@@ -506,7 +556,7 @@ export function InviteScreen({
               </View>
               <View style={styles.note}>
                 <Text style={styles.noteText}>
-                  Greenfield Academy allows recurring authorizations. {firstHandler} will get a fresh code each school day she is assigned — codes are never reused.
+                  Greenfield Academy allows recurring authorizations. {firstHandler} will get a fresh code each school day they are assigned — codes are never reused.
                 </Text>
               </View>
               <PrimaryButton

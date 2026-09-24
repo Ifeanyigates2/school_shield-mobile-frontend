@@ -10,7 +10,8 @@ import {
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Feather } from '@expo/vector-icons';
 import { BottomTabBar } from '../components';
-import { Child } from '../data/family';
+import { useFamily } from '../data/FamilyContext';
+import { Child, eligibleHandlers, firstChildForHandler } from '../data/family';
 import { colors } from '../theme';
 import { ChildrenScreen } from './ChildrenScreen';
 import { HandlersFlow } from './HandlersFlow';
@@ -30,10 +31,15 @@ import {
 export type { OperationalState };
 
 export function HomeScreen() {
+  const { guardianName, children, handlers } = useFamily();
   const [activeTab, setActiveTab] = useState<'home' | 'children' | 'activity' | 'more'>('home');
   const [operationalState, setOperationalState] = useState<OperationalState>('active');
   const [subflow, setSubflow] = useState<'none' | 'handlers' | 'pickup'>('none');
-  const [selectedChildId, setSelectedChildId] = useState<string>('amara');
+  const [selectedChildId, setSelectedChildId] = useState<string>(children[0]?.id ?? 'amara');
+  const sessionChildIds = children.map((c) => c.id);
+  const [handlerId, setHandlerId] = useState('chidinma');
+  const [pickupStart, setPickupStart] = useState<'week' | 'choose'>('week');
+  const [pickupKey, setPickupKey] = useState(0);
   const [codeModalChild, setCodeModalChild] = useState<Child | null>(null);
   const [codeOverlayMode, setCodeOverlayMode] = useState<'qr' | 'digits'>('qr');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -43,9 +49,16 @@ export function HomeScreen() {
   if (subflow === 'handlers') {
     return (
       <HandlersFlow
-        initialHandlerId="chidinma"
+        initialHandlerId={handlerId}
         onBack={() => setSubflow('none')}
-        onOpenPickup={() => setSubflow('pickup')}
+        onOpenPickup={(id) => {
+          const handler = handlers.find((h) => h.id === id);
+          setHandlerId(id);
+          setSelectedChildId(firstChildForHandler(handler, children[0]?.id ?? selectedChildId, sessionChildIds));
+          setPickupStart('choose');
+          setPickupKey((n) => n + 1);
+          setSubflow('pickup');
+        }}
       />
     );
   }
@@ -53,7 +66,11 @@ export function HomeScreen() {
   if (subflow === 'pickup') {
     return (
       <PickupFlow
+        key={pickupKey}
         childId={selectedChildId}
+        handlerId={handlerId}
+        startAt={pickupStart}
+        onSelectHandler={setHandlerId}
         onBack={() => setSubflow('none')}
         onHandlers={() => setSubflow('handlers')}
       />
@@ -63,7 +80,10 @@ export function HomeScreen() {
   const topInset = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 48;
 
   const handlePlanDropoff = () => {
-    setSelectedChildId('amara');
+    const next = eligibleHandlers(handlers, selectedChildId, 'dropoff')[0] ?? eligibleHandlers(handlers, selectedChildId, 'pickup')[0];
+    if (next) setHandlerId(next.id);
+    setPickupStart('week');
+    setPickupKey((n) => n + 1);
     setSubflow('pickup');
   };
 
@@ -78,7 +98,11 @@ export function HomeScreen() {
             onSelectChild={(id) => setSelectedChildId(id)}
             onOpenHandlers={() => setSubflow('handlers')}
             onOpenPickup={(id) => {
+              const next = eligibleHandlers(handlers, id, 'pickup')[0];
               setSelectedChildId(id);
+              if (next) setHandlerId(next.id);
+              setPickupStart('week');
+              setPickupKey((n) => n + 1);
               setSubflow('pickup');
             }}
           />
@@ -117,7 +141,10 @@ export function HomeScreen() {
           topInset={topInset}
           onViewActivity={() => setActiveTab('activity')}
           onManagePickup={() => {
-            setSelectedChildId('amara');
+            const next = eligibleHandlers(handlers, selectedChildId, 'pickup')[0];
+            if (next) setHandlerId(next.id);
+            setPickupStart('week');
+            setPickupKey((n) => n + 1);
             setSubflow('pickup');
           }}
           onGoHome={() => setOperationalState('active')}
@@ -146,6 +173,7 @@ export function HomeScreen() {
 
             <HomeChildrenSection
               operationalState={operationalState}
+              childrenList={children}
               onSelectChild={(childId) => {
                 setSelectedChildId(childId);
                 setActiveTab('children');
@@ -163,7 +191,10 @@ export function HomeScreen() {
             <HomeQuickActions
               onOpenHandlers={() => setSubflow('handlers')}
               onOpenException={() => {
-                setSelectedChildId('amara');
+                const next = eligibleHandlers(handlers, selectedChildId, 'pickup')[0];
+                if (next) setHandlerId(next.id);
+                setPickupStart('choose');
+                setPickupKey((n) => n + 1);
                 setSubflow('pickup');
               }}
               onOpenPlan={() => setShowPlanModal(true)}

@@ -11,14 +11,25 @@ import {
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Field, PrimaryButton, Wordmark } from '../components';
 import { colors } from '../theme';
+import { useAndroidBack } from '../useAndroidBack';
 
-export function LoginScreen({ onForgot }: { onForgot: () => void }) {
+export function LoginScreen({
+  onBack,
+  onForgot,
+  onSuccess,
+}: {
+  onBack: () => void;
+  onForgot: () => void;
+  onSuccess: () => void;
+}) {
   const [email, setEmail] = useState('');
+  // TODO(ship): drop the hard-coded "Welcome back, Zara" title and the demo password pre-fill.
   const [password, setPassword] = useState('password');
   const [hidden, setHidden] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const canSubmit = useMemo(() => email.trim().length > 0 && password.length > 0, [email, password]);
+  useAndroidBack(onBack);
 
   return (
     <View style={styles.root}>
@@ -28,6 +39,9 @@ export function LoginScreen({ onForgot }: { onForgot: () => void }) {
       <View style={[styles.blob, styles.blobMid]} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.inner}>
+        <Pressable onPress={onBack} hitSlop={12} style={styles.backHit}>
+          <Text style={styles.back}>‹</Text>
+        </Pressable>
         <Wordmark light />
         <Text style={styles.title}>Welcome back, Zara</Text>
 
@@ -68,6 +82,7 @@ export function LoginScreen({ onForgot }: { onForgot: () => void }) {
               return;
             }
             setError(null);
+            onSuccess();
           }}
         />
       </KeyboardAvoidingView>
@@ -113,6 +128,8 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   error: { color: '#F97066', marginBottom: 12, fontSize: 13 },
+  backHit: { width: 40, marginBottom: 8 },
+  back: { color: colors.white, fontSize: 32, marginTop: -6 },
   show: { color: 'rgba(255,255,255,0.78)', fontWeight: '600', fontSize: 14 },
   forgotWrap: { alignSelf: 'flex-end', marginTop: 14 },
   forgot: { color: colors.white, fontWeight: '600', fontSize: 14 },

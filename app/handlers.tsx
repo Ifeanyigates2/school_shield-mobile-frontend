@@ -9,7 +9,7 @@ export default function HandlersRoute() {
     <HandlersFlow
       initialHandlerId={params.initialHandlerId || 'chidinma'}
       onBack={() => router.back()}
-      onOpenPickup={() => router.push('/pickup')}
+      onOpenPickup={(handlerId) => router.push({ pathname: '/pickup', params: { handlerId } })}
     />
   );
 }

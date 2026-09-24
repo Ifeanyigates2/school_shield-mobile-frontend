@@ -14,7 +14,9 @@ import {
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Field, PrimaryButton } from '../components';
 import { colors } from '../theme';
+import { useAndroidBack } from '../useAndroidBack';
 
+// TODO(ship): replace demo reset code 0000 with the SMS verification API.
 const RESET_CODE = '0000';
 const POLICY =
   'Password must include at least one capital letter, one number, and one special character.';
@@ -35,6 +37,7 @@ export function ResetPasswordScreen({ onBack }: { onBack: () => void }) {
     if (step > 0) setStep(step - 1);
     else onBack();
   };
+  useAndroidBack(goBack);
 
   return (
     <View style={styles.root}>

@@ -5,7 +5,9 @@ export default function LoginRoute() {
   const router = useRouter();
   return (
     <LoginScreen
+      onBack={() => router.back()}
       onForgot={() => router.push('/reset')}
+      onSuccess={() => router.replace('/(tabs)')}
     />
   );
 }
