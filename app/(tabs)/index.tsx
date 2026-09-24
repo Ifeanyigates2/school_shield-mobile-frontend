@@ -71,10 +71,10 @@ export default function HomeScreen() {
             <HomeChildrenSection
               operationalState={operationalState}
               onSelectChild={(childId) => {
-                router.push({ pathname: '/(tabs)/children', params: { initialChildId: childId } });
+                router.push({ pathname: '/child-details', params: { childId } });
               }}
-              onViewPlan={(_childId) => {
-                setShowPlanModal(true);
+              onViewPlan={(childId) => {
+                router.push({ pathname: '/todays-plan', params: { childId } });
               }}
               onShowCode={(child) => {
                 setCodeModalChild(child);
@@ -87,7 +87,7 @@ export default function HomeScreen() {
               onOpenException={() => {
                 router.push({ pathname: '/pickup', params: { childId: 'amara' } });
               }}
-              onOpenPlan={() => setShowPlanModal(true)}
+              onOpenPlan={() => router.push({ pathname: '/todays-plan', params: { childId: 'amara' } })}
             />
 
             <HomeRecentActivity

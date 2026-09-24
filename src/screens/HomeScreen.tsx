@@ -14,6 +14,8 @@ import { useFamily } from '../data/FamilyContext';
 import { Child, eligibleHandlers, firstChildForHandler } from '../data/family';
 import { colors } from '../theme';
 import { ChildrenScreen } from './ChildrenScreen';
+import { ChildDetailsScreen } from './ChildDetailsScreen';
+import { TodaysPlanScreen } from './TodaysPlanScreen';
 import { HandlersFlow } from './HandlersFlow';
 import { PickupFlow } from './PickupFlow';
 import {
@@ -34,7 +36,7 @@ export function HomeScreen() {
   const { guardianName, children, handlers } = useFamily();
   const [activeTab, setActiveTab] = useState<'home' | 'children' | 'activity' | 'more'>('home');
   const [operationalState, setOperationalState] = useState<OperationalState>('active');
-  const [subflow, setSubflow] = useState<'none' | 'handlers' | 'pickup'>('none');
+  const [subflow, setSubflow] = useState<'none' | 'handlers' | 'pickup' | 'child-details' | 'todays-plan'>('none');
   const [selectedChildId, setSelectedChildId] = useState<string>(children[0]?.id ?? 'amara');
   const sessionChildIds = children.map((c) => c.id);
   const [handlerId, setHandlerId] = useState('chidinma');
@@ -46,6 +48,58 @@ export function HomeScreen() {
   const [showPlanModal, setShowPlanModal] = useState(false);
 
   // Subflow navigation
+  if (subflow === 'child-details') {
+    return (
+      <ChildDetailsScreen
+        initialChildId={selectedChildId}
+        operationalState={operationalState}
+        onBack={() => setSubflow('none')}
+        onOpenPickup={(childId) => {
+          const next = eligibleHandlers(handlers, childId, 'pickup')[0];
+          setSelectedChildId(childId);
+          if (next) setHandlerId(next.id);
+          setPickupStart('week');
+          setPickupKey((n) => n + 1);
+          setSubflow('pickup');
+        }}
+        onOpenDropoff={(childId) => {
+          const next = eligibleHandlers(handlers, childId, 'dropoff')[0] ?? eligibleHandlers(handlers, childId, 'pickup')[0];
+          setSelectedChildId(childId);
+          if (next) setHandlerId(next.id);
+          setPickupStart('week');
+          setPickupKey((n) => n + 1);
+          setSubflow('pickup');
+        }}
+        onOpenHandlers={() => setSubflow('handlers')}
+        onViewPlan={(childId) => {
+          setSelectedChildId(childId);
+          setSubflow('todays-plan');
+        }}
+        onViewActivity={() => {
+          setSubflow('none');
+          setActiveTab('activity');
+        }}
+      />
+    );
+  }
+
+  if (subflow === 'todays-plan') {
+    return (
+      <TodaysPlanScreen
+        childId={selectedChildId}
+        onBack={() => setSubflow('none')}
+        onOpenDropoff={() => handlePlanDropoff()}
+        onOpenPickup={() => {
+          const next = eligibleHandlers(handlers, selectedChildId, 'pickup')[0];
+          if (next) setHandlerId(next.id);
+          setPickupStart('week');
+          setPickupKey((n) => n + 1);
+          setSubflow('pickup');
+        }}
+      />
+    );
+  }
+
   if (subflow === 'handlers') {
     return (
       <HandlersFlow
@@ -176,11 +230,11 @@ export function HomeScreen() {
               childrenList={children}
               onSelectChild={(childId) => {
                 setSelectedChildId(childId);
-                setActiveTab('children');
+                setSubflow('child-details');
               }}
               onViewPlan={(childId) => {
                 setSelectedChildId(childId);
-                setShowPlanModal(true);
+                setSubflow('todays-plan');
               }}
               onShowCode={(child) => {
                 setCodeModalChild(child);
@@ -197,7 +251,7 @@ export function HomeScreen() {
                 setPickupKey((n) => n + 1);
                 setSubflow('pickup');
               }}
-              onOpenPlan={() => setShowPlanModal(true)}
+              onOpenPlan={() => setSubflow('todays-plan')}
             />
 
             <HomeRecentActivity
