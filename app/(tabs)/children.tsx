@@ -12,6 +12,9 @@ export default function ChildrenTab() {
       onOpenPickup={(childId) => {
         router.push({ pathname: '/pickup', params: { childId } });
       }}
+      onSelectChild={(childId) => {
+        router.push({ pathname: '/child-details', params: { childId } });
+      }}
     />
   );
 }
