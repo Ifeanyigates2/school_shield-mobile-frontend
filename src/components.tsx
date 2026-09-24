@@ -247,7 +247,7 @@ export function FigmaAvatar({
             width: dotSize,
             height: dotSize,
             borderRadius: dotSize / 2,
-            backgroundColor: '#12B76A',
+            backgroundColor: '#0F6647',
             borderWidth: 2,
             borderColor: colors.white,
           }}
