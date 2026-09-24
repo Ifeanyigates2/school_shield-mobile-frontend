@@ -54,6 +54,7 @@ export function HomeScreen() {
         initialChildId={selectedChildId}
         operationalState={operationalState}
         onBack={() => setSubflow('none')}
+        onSelectChild={(childId) => setSelectedChildId(childId)}
         onOpenPickup={(childId) => {
           const next = eligibleHandlers(handlers, childId, 'pickup')[0];
           setSelectedChildId(childId);

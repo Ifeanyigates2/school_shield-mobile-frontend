@@ -71,7 +71,7 @@ export default function HomeScreen() {
             <HomeChildrenSection
               operationalState={operationalState}
               onSelectChild={(childId) => {
-                router.push({ pathname: '/child-details', params: { childId } });
+                router.push({ pathname: '/child-details', params: { childId, state: operationalState } });
               }}
               onViewPlan={(childId) => {
                 router.push({ pathname: '/todays-plan', params: { childId } });

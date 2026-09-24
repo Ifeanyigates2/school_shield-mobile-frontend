@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Platform,
   Pressable,
@@ -15,6 +15,7 @@ import { Child, CHILDREN } from "../data/family";
 import { useAndroidBack } from "../useAndroidBack";
 import { RecentActivity } from "../components/RecentActivity";
 import { OperationalState } from "../components/home";
+import { ChildSwitcherFAB } from "../components/ChildSwitcherFAB";
 
 export interface ChildDetailsScreenProps {
   initialChildId?: string;
@@ -25,6 +26,7 @@ export interface ChildDetailsScreenProps {
   onOpenHandlers?: () => void;
   onViewPlan?: (childId: string) => void;
   onViewActivity?: () => void;
+  onSelectChild?: (childId: string) => void;
 }
 
 export function ChildDetailsScreen({
@@ -36,19 +38,37 @@ export function ChildDetailsScreen({
   onOpenHandlers,
   onViewPlan,
   onViewActivity,
+  onSelectChild,
 }: ChildDetailsScreenProps) {
   useAndroidBack(onBack);
 
   const { children = CHILDREN, handlers, guardianName } = useFamily();
   const [selectedChildId, setSelectedChildId] =
     useState<string>(initialChildId);
+  const [currentOperationalState, setCurrentOperationalState] =
+    useState<OperationalState>(operationalState);
+
+  useEffect(() => {
+    if (initialChildId) {
+      setSelectedChildId(initialChildId);
+    }
+  }, [initialChildId]);
+
+  useEffect(() => {
+    setCurrentOperationalState(operationalState);
+  }, [operationalState]);
+
+  const handleSelectChild = (childId: string) => {
+    setSelectedChildId(childId);
+    onSelectChild?.(childId);
+  };
 
   const activeChild: Child =
     children.find((c) => c.id === selectedChildId) ??
     children[0] ??
     CHILDREN[0];
 
-  const isAtSchool = operationalState === "active";
+  const isAtSchool = currentOperationalState === "active";
   const isAmara = activeChild.id === "amara";
   const checkInTime = isAmara ? "7:48 AM" : "7:52 AM";
   const childFirstName = activeChild.name.split(" ")[0];
@@ -93,47 +113,9 @@ export function ChildDetailsScreen({
 
       <ScrollView
         className="flex-1 px-4"
-        contentContainerStyle={{ paddingBottom: 48 }}
+        contentContainerStyle={{ paddingBottom: 90 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* SWITCH CHILD PROFILE SECTION */}
-        {/* <View className="mt-2 mb-4">
-          <Text className="text-xs text-slate-500 font-medium mb-1.5">
-            Switch child profile
-          </Text>
-          <View className="flex-row items-center gap-2 bg-white/90 self-start p-1.5 rounded-2xl border border-slate-200 shadow-xs">
-            {children.map((child) => {
-              const isSelected = child.id === activeChild.id;
-              return (
-                <Pressable
-                  key={child.id}
-                  onPress={() => setSelectedChildId(child.id)}
-                  className={`flex-row items-center gap-1.5 px-2.5 py-1 rounded-xl transition-all ${
-                    isSelected
-                      ? "bg-slate-100 border border-slate-300"
-                      : "opacity-70"
-                  }`}
-                >
-                  <FigmaAvatar
-                    name={child.name}
-                    size={28}
-                    showStatusDot={false}
-                  />
-                  <Text
-                    className={`text-xs ${
-                      isSelected
-                        ? "font-bold text-ink"
-                        : "font-medium text-slate-600"
-                    }`}
-                  >
-                    {child.name.split(" ")[0]}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View> */}
-
         {/* MAIN CHILD HERO PROFILE */}
         <View className="items-center mt-1 mb-5">
           {/* Large Avatar */}
@@ -155,23 +137,33 @@ export function ChildDetailsScreen({
             {activeChild.klass} · Greenfield Academy, Lekki Phase 1
           </Text>
 
-          {/* Status Pill Badge */}
-          {isAtSchool ? (
-            <View className="flex-row items-center gap-1.5 bg-[#E8F7F0] px-4 py-2 rounded-full border border-emerald-200 mt-3">
-              <View className="w-6 h-6 rounded-full bg-success items-center justify-center mt-0.5">
-                <Feather name="check" size={14} color="#FFFFFF" />
+          {/* Status Pill Badge (Tap to toggle state for testing: At school / Pickup vs At home / Drop-off) */}
+          <Pressable
+            onPress={() =>
+              setCurrentOperationalState((prev) =>
+                prev === "active" ? "upcoming" : "active"
+              )
+            }
+            hitSlop={8}
+            className="active:opacity-75"
+          >
+            {isAtSchool ? (
+              <View className="flex-row items-center gap-1.5 bg-[#E8F7F0] px-4 py-2 rounded-full border border-emerald-200 mt-3">
+                <View className="w-6 h-6 rounded-full bg-success items-center justify-center mt-0.5">
+                  <Feather name="check" size={14} color="#FFFFFF" />
+                </View>
+                <Text className="text-sm font-semibold text-emerald-800">
+                  At school · checked in {checkInTime}
+                </Text>
               </View>
-              <Text className="text-sm font-semibold text-emerald-800">
-                At school · checked in {checkInTime}
-              </Text>
-            </View>
-          ) : (
-            <View className="bg-slate-100 px-3.5 py-1 rounded-xl border border-slate-200 mt-3">
-              <Text className="text-[11px] font-bold text-slate-600 tracking-wider">
-                AT HOME
-              </Text>
-            </View>
-          )}
+            ) : (
+              <View className="bg-slate-100 px-3.5 py-1.5 rounded-xl border border-slate-200 mt-3">
+                <Text className="text-[11px] font-bold text-slate-600 tracking-wider">
+                  AT HOME
+                </Text>
+              </View>
+            )}
+          </Pressable>
         </View>
 
         {/* ACTION BUTTON(S) */}
@@ -193,7 +185,7 @@ export function ChildDetailsScreen({
                 className="flex-1 bg-navy h-14 rounded-2xl items-center justify-center active:opacity-90 shadow-sm"
                 onPress={() => onOpenDropoff?.(activeChild.id)}
               >
-                <Text className="text-white text-sm font-semibold">
+                <Text className="text-white text-md font-semibold">
                   Manage Drop-off
                 </Text>
               </Pressable>
@@ -201,7 +193,7 @@ export function ChildDetailsScreen({
                 className="flex-1 bg-white border border-slate-300 h-14 rounded-2xl  items-center justify-center active:opacity-90 shadow-xs"
                 onPress={() => onOpenPickup?.(activeChild.id)}
               >
-                <Text className="text-navy text-sm font-semibold">
+                <Text className="text-navy text-md font-semibold">
                   Manage Pickup
                 </Text>
               </Pressable>
@@ -338,11 +330,19 @@ export function ChildDetailsScreen({
         {/* RECENT ACTIVITY SECTION */}
         <RecentActivity
           childName={childFirstName}
-          operationalState={operationalState}
+          operationalState={currentOperationalState}
           onSeeAll={onViewActivity}
           className="mb-4"
         />
       </ScrollView>
+
+      {/* DRAGGABLE CHILD SWITCHER FAB */}
+      <ChildSwitcherFAB
+        childrenList={children}
+        activeChildId={activeChild.id}
+        onSelectChild={handleSelectChild}
+        topInset={topInset}
+      />
     </View>
   );
 }
