@@ -21,9 +21,11 @@ export interface ChildSwitcherFABProps {
   topInset?: number;
 }
 
-const FAB_WIDTH = 168;
-const FAB_HEIGHT = 48;
+const AVATAR_SIZE = 50;
+const OVERLAP = 14;
+const FAB_HEIGHT = 90;
 const MARGIN = 16;
+const MAX_VISIBLE_AVATARS = 4;
 
 export function ChildSwitcherFAB({
   childrenList,
@@ -35,18 +37,59 @@ export function ChildSwitcherFAB({
   const screenWidth = windowDimensions.width;
   const screenHeight = windowDimensions.height;
 
-  // Active child and next / other children
+  // Active child
   const activeChild =
     childrenList.find((c) => c.id === activeChildId) ?? childrenList[0];
-  const otherChildren = childrenList.filter((c) => c.id !== activeChild?.id);
-  const nextChild = otherChildren[0] ?? activeChild;
 
-  // Keep refs synchronized with latest props and computed values to avoid stale closures in PanResponder
-  const activeChildRef = useRef(activeChild);
-  activeChildRef.current = activeChild;
+  // Stable ordering: David first (left), Amara second (right), then any additional children
+  const orderedChildren = useMemo(() => {
+    const list = [...childrenList];
+    list.sort((a, b) => {
+      if (a.id === 'david') return -1;
+      if (b.id === 'david') return 1;
+      if (a.id === 'amara') return -1;
+      if (b.id === 'amara') return 1;
+      return 0;
+    });
+    return list;
+  }, [childrenList]);
 
-  const nextChildRef = useRef(nextChild);
-  nextChildRef.current = nextChild;
+  // Handle multiple children: up to MAX_VISIBLE_AVATARS directly visible in the FAB row
+  const hasOverflow = orderedChildren.length > MAX_VISIBLE_AVATARS;
+  const visibleChildren = useMemo(
+    () =>
+      hasOverflow
+        ? orderedChildren.slice(0, MAX_VISIBLE_AVATARS - 1)
+        : orderedChildren,
+    [orderedChildren, hasOverflow]
+  );
+  const extraCount = hasOverflow
+    ? orderedChildren.length - visibleChildren.length
+    : 0;
+  const totalItemCount = visibleChildren.length + (extraCount > 0 ? 1 : 0);
+
+  // Dynamic width based on the number of children
+  const rowWidth =
+    AVATAR_SIZE + (totalItemCount - 1) * (AVATAR_SIZE - OVERLAP);
+  const fabWidth = Math.max(90, rowWidth + 6);
+
+  // Item centers & touch boundaries
+  const boundaries = useMemo(() => {
+    const startX = (fabWidth - rowWidth) / 2;
+    const centers: number[] = [];
+    for (let i = 0; i < totalItemCount; i++) {
+      centers.push(startX + i * (AVATAR_SIZE - OVERLAP) + AVATAR_SIZE / 2);
+    }
+    const bounds: number[] = [];
+    for (let i = 0; i < centers.length - 1; i++) {
+      bounds.push((centers[i] + centers[i + 1]) / 2);
+    }
+    return bounds;
+  }, [fabWidth, rowWidth, totalItemCount]);
+
+  // Keep refs synchronized with latest props to avoid stale closures in PanResponder
+  const visibleChildrenRef = useRef(visibleChildren);
+  visibleChildrenRef.current = visibleChildren;
 
   const childrenListRef = useRef(childrenList);
   childrenListRef.current = childrenList;
@@ -54,20 +97,26 @@ export function ChildSwitcherFAB({
   const onSelectChildRef = useRef(onSelectChild);
   onSelectChildRef.current = onSelectChild;
 
+  const boundariesRef = useRef(boundaries);
+  boundariesRef.current = boundaries;
+
+  const fabWidthRef = useRef(fabWidth);
+  fabWidthRef.current = fabWidth;
+
   const [modalVisible, setModalVisible] = useState(false);
 
   // Position boundaries
   const minX = MARGIN;
-  const maxX = screenWidth - FAB_WIDTH - MARGIN;
-  const minY = topInset + 54;
+  const maxX = screenWidth - fabWidth - MARGIN;
+  const minY = topInset + 40;
   const maxY = screenHeight - FAB_HEIGHT - (Platform.OS === 'ios' ? 70 : 50);
 
-  const boundsRef = useRef({ minX, maxX, minY, maxY, screenWidth });
-  boundsRef.current = { minX, maxX, minY, maxY, screenWidth };
+  const boundsRef = useRef({ minX, maxX, minY, maxY, screenWidth, fabWidth });
+  boundsRef.current = { minX, maxX, minY, maxY, screenWidth, fabWidth };
 
-  // Default initial position: Bottom right
-  const defaultX = maxX;
-  const defaultY = screenHeight - 160;
+  // Default initial position: Left side next to hero profile matching Figma iPhone 22
+  const defaultX = minX;
+  const defaultY = topInset + 54;
 
   const pan = useRef(new Animated.ValueXY({ x: defaultX, y: defaultY })).current;
   const currentPos = useRef({ x: defaultX, y: defaultY });
@@ -85,9 +134,9 @@ export function ChildSwitcherFAB({
   }, [pan]);
 
   const snapToNearestEdge = (x: number, y: number) => {
-    const { minX, maxX, minY, maxY, screenWidth } = boundsRef.current;
+    const { minX, maxX, minY, maxY, screenWidth, fabWidth } = boundsRef.current;
     const clampedY = Math.max(minY, Math.min(maxY, y));
-    const snapX = x + FAB_WIDTH / 2 < screenWidth / 2 ? minX : maxX;
+    const snapX = x + fabWidth / 2 < screenWidth / 2 ? minX : maxX;
 
     Animated.spring(pan, {
       toValue: { x: snapX, y: clampedY },
@@ -95,18 +144,6 @@ export function ChildSwitcherFAB({
       bounciness: 4,
       speed: 14,
     }).start();
-  };
-
-  const handleSwitchAction = () => {
-    const currentList = childrenListRef.current;
-    const targetNext = nextChildRef.current;
-    if (currentList.length === 2 && targetNext) {
-      // Direct instant toggle if 2 children
-      onSelectChildRef.current(targetNext.id);
-    } else {
-      // Open selector sheet if > 2 children
-      setModalVisible(true);
-    }
   };
 
   const panResponder = useMemo(
@@ -132,7 +169,7 @@ export function ChildSwitcherFAB({
           if (longPressTimer.current) {
             clearTimeout(longPressTimer.current);
           }
-          // Optional long press to open full selector
+          // Long press opens full selection sheet
           longPressTimer.current = setTimeout(() => {
             if (!isDragging.current) {
               setModalVisible(true);
@@ -149,7 +186,7 @@ export function ChildSwitcherFAB({
           }
           pan.setValue({ x: gestureState.dx, y: gestureState.dy });
         },
-        onPanResponderRelease: (_, gestureState) => {
+        onPanResponderRelease: (e, gestureState) => {
           if (longPressTimer.current) {
             clearTimeout(longPressTimer.current);
             longPressTimer.current = null;
@@ -166,7 +203,40 @@ export function ChildSwitcherFAB({
             Math.abs(gestureState.dx) < 6 && Math.abs(gestureState.dy) < 6;
 
           if (isTap && !isDragging.current) {
-            handleSwitchAction();
+            const currentFabWidth = fabWidthRef.current;
+            let clickX = gestureState.x0 - currentPos.current.x;
+            let clickY = gestureState.y0 - currentPos.current.y;
+
+            if (isNaN(clickX) || clickX < 0 || clickX > currentFabWidth) {
+              clickX = e?.nativeEvent?.locationX ?? currentFabWidth / 2;
+            }
+            if (isNaN(clickY) || clickY < 0 || clickY > FAB_HEIGHT) {
+              clickY = e?.nativeEvent?.locationY ?? FAB_HEIGHT / 2;
+            }
+
+            // If tapped top header text area when > 2 children, open modal
+            if (clickY < 36 && childrenListRef.current.length > 2) {
+              setModalVisible(true);
+            } else {
+              // Find tapped item index by comparing clickX with boundaries
+              const bounds = boundariesRef.current;
+              let tappedIndex = 0;
+              while (tappedIndex < bounds.length && clickX >= bounds[tappedIndex]) {
+                tappedIndex++;
+              }
+
+              const currentVisible = visibleChildrenRef.current;
+              if (tappedIndex < currentVisible.length) {
+                // Clicked on a specific child icon!
+                const targetChild = currentVisible[tappedIndex];
+                if (targetChild) {
+                  onSelectChildRef.current(targetChild.id);
+                }
+              } else {
+                // Clicked on "+N" extra badge -> open full modal
+                setModalVisible(true);
+              }
+            }
           }
 
           snapToNearestEdge(currentPos.current.x, currentPos.current.y);
@@ -191,8 +261,6 @@ export function ChildSwitcherFAB({
     return null;
   }
 
-  const nextChildFirstName = nextChild?.name.split(' ')[0] ?? 'Child';
-
   return (
     <>
       <Animated.View
@@ -208,22 +276,41 @@ export function ChildSwitcherFAB({
         ]}
         {...panResponder.panHandlers}
       >
-        <View style={styles.fabPill}>
-          <FigmaAvatar
-            name={nextChild.name}
-            size={32}
-            showStatusDot={false}
-          />
-          <View style={styles.fabTextContainer}>
-            <Text style={styles.fabPrimaryText} numberOfLines={1}>
-              {childrenList.length === 2 ? nextChildFirstName : 'Switch child'}
-            </Text>
-            <Text style={styles.fabSubText} numberOfLines={1}>
-              {childrenList.length === 2 ? 'Switch profile' : `${childrenList.length} profiles`}
-            </Text>
-          </View>
-          <View style={styles.iconCircle}>
-            <Feather name="repeat" size={12} color="#F5A524" />
+        <View style={[styles.fabCard, { width: fabWidth }]}>
+          <Text style={styles.fabTitle}>
+            Switch child{'\n'}profile
+          </Text>
+          <View style={styles.avatarRow}>
+            {visibleChildren.map((child, index) => {
+              const isActive = child.id === activeChild.id;
+              return (
+                <View
+                  key={child.id}
+                  style={[
+                    styles.avatarWrapper,
+                    index > 0 && styles.overlappingAvatar,
+                    { zIndex: index + 1 },
+                  ]}
+                >
+                  <FigmaAvatar
+                    name={child.name}
+                    size={AVATAR_SIZE}
+                    showStatusDot={isActive}
+                  />
+                </View>
+              );
+            })}
+            {extraCount > 0 && (
+              <View
+                style={[
+                  styles.extraBadge,
+                  styles.overlappingAvatar,
+                  { zIndex: visibleChildren.length + 1 },
+                ]}
+              >
+                <Text style={styles.extraBadgeText}>+{extraCount}</Text>
+              </View>
+            )}
           </View>
         </View>
       </Animated.View>
@@ -245,9 +332,9 @@ export function ChildSwitcherFAB({
           >
             <View style={styles.modalHeader}>
               <View>
-                <Text style={styles.modalTitle}>Switch child profile</Text>
+                <Text style={styles.modalHeading}>Switch child profile</Text>
                 <Text style={styles.modalSubtitle}>
-                  Select a child to view their details
+                  Select a child to view their details ({childrenList.length} profiles)
                 </Text>
               </View>
               <Pressable
@@ -260,7 +347,7 @@ export function ChildSwitcherFAB({
             </View>
 
             <View style={styles.childList}>
-              {childrenList.map((child) => {
+              {orderedChildren.map((child) => {
                 const isSelected = child.id === activeChild.id;
                 return (
                   <Pressable
@@ -316,48 +403,47 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     zIndex: 999,
-    elevation: 12,
   },
-  fabPill: {
-    width: FAB_WIDTH,
+  fabCard: {
     height: FAB_HEIGHT,
-    backgroundColor: '#0B1F3D',
-    borderRadius: FAB_HEIGHT / 2,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fabTitle: {
+    color: '#101828',
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 17,
+    marginBottom: 6,
+    letterSpacing: -0.3,
+  },
+  avatarRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  fabTextContainer: {
-    flex: 1,
-    marginLeft: 8,
-    marginRight: 4,
     justifyContent: 'center',
   },
-  fabPrimaryText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: -0.2,
+  avatarWrapper: {},
+  overlappingAvatar: {
+    marginLeft: -OVERLAP,
+    borderRadius: (AVATAR_SIZE + 4) / 2,
+    borderWidth: 2.5,
+    borderColor: '#FFFFFF',
+    backgroundColor: '#FFFFFF',
   },
-  fabSubText: {
-    color: '#94A3B8',
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  iconCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  extraBadge: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    backgroundColor: '#0B1F3D',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  extraBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
   modalOverlay: {
     flex: 1,
@@ -382,7 +468,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 16,
   },
-  modalTitle: {
+  modalHeading: {
     fontSize: 18,
     fontWeight: '700',
     color: '#101828',
