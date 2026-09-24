@@ -18,6 +18,9 @@ import { ChildDetailsScreen } from './ChildDetailsScreen';
 import { TodaysPlanScreen } from './TodaysPlanScreen';
 import { HandlersFlow } from './HandlersFlow';
 import { PickupFlow } from './PickupFlow';
+import { ActivityScreen } from './ActivityScreen';
+import { HandoverRecordScreen } from './HandoverRecordScreen';
+import { MoreScreen } from './MoreScreen';
 import {
   HomeHeader,
   HomeStatusBanner,
@@ -36,7 +39,8 @@ export function HomeScreen() {
   const { guardianName, children, handlers } = useFamily();
   const [activeTab, setActiveTab] = useState<'home' | 'children' | 'activity' | 'more'>('home');
   const [operationalState, setOperationalState] = useState<OperationalState>('active');
-  const [subflow, setSubflow] = useState<'none' | 'handlers' | 'pickup' | 'child-details' | 'todays-plan'>('none');
+  const [subflow, setSubflow] = useState<'none' | 'handlers' | 'pickup' | 'child-details' | 'todays-plan' | 'handover-record'>('none');
+  const [selectedActivityId, setSelectedActivityId] = useState<string>('amara-picked-up');
   const [selectedChildId, setSelectedChildId] = useState<string>(children[0]?.id ?? 'amara');
   const sessionChildIds = children.map((c) => c.id);
   const [handlerId, setHandlerId] = useState('chidinma');
@@ -132,6 +136,15 @@ export function HomeScreen() {
     );
   }
 
+  if (subflow === 'handover-record') {
+    return (
+      <HandoverRecordScreen
+        activityId={selectedActivityId}
+        onBack={() => setSubflow('none')}
+      />
+    );
+  }
+
   const topInset = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 48;
 
   const handlePlanDropoff = () => {
@@ -163,32 +176,17 @@ export function HomeScreen() {
           />
         </View>
       ) : activeTab === 'activity' ? (
-        <View className="flex-1 items-center justify-center px-8 bg-canvas" style={{ paddingTop: topInset }}>
-          <Feather name="calendar" size={48} color={colors.navy} />
-          <Text className="text-2xl font-bold text-ink mt-4 mb-2">Activity & History</Text>
-          <Text className="text-sm text-mute text-center leading-6 mb-6">
-            Past pickup logs, gate check-in confirmations, and handler audits will be listed here.
-          </Text>
-          <Pressable
-            className="bg-navy py-3 px-6 rounded-2xl"
-            onPress={() => setActiveTab('home')}
-          >
-            <Text className="text-white text-sm font-semibold">Back to Home</Text>
-          </Pressable>
+        <View className="flex-1">
+          <ActivityScreen
+            onSelectActivity={(activity) => {
+              setSelectedActivityId(activity.id);
+              setSubflow('handover-record');
+            }}
+          />
         </View>
       ) : activeTab === 'more' ? (
-        <View className="flex-1 items-center justify-center px-8 bg-canvas" style={{ paddingTop: topInset }}>
-          <Feather name="settings" size={48} color={colors.navy} />
-          <Text className="text-2xl font-bold text-ink mt-4 mb-2">School Settings</Text>
-          <Text className="text-sm text-mute text-center leading-6 mb-6">
-            Greenfield Academy parent preferences, emergency broadcast settings, and profile details.
-          </Text>
-          <Pressable
-            className="bg-navy py-3 px-6 rounded-2xl"
-            onPress={() => setActiveTab('home')}
-          >
-            <Text className="text-white text-sm font-semibold">Back to Home</Text>
-          </Pressable>
+        <View className="flex-1">
+          <MoreScreen />
         </View>
       ) : operationalState === 'completed' ? (
         /* DROP-OFF COMPLETED STATE */
