@@ -21,6 +21,7 @@ export default function RootLayout() {
         <Stack.Screen name="pickup" />
         <Stack.Screen name="child-details" />
         <Stack.Screen name="todays-plan" />
+        <Stack.Screen name="handover-record" />
       </Stack>
     </FamilyProvider>
   );
