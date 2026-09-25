@@ -1,4 +1,4 @@
-﻿import {
+import {
   Platform,
   Pressable,
   ScrollView,
@@ -94,11 +94,10 @@ function NotifRow({ item }: { item: NotifItem }) {
     <Pressable
       style={({ pressed }) => ({
         backgroundColor: pressed ? 'rgba(11,31,61,0.04)' : colors.white,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
       })}
     >
-      <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
+      <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
+        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
         {/* Circular icon */}
         <View
           style={{
@@ -152,6 +151,7 @@ function NotifRow({ item }: { item: NotifItem }) {
             {item.body}
           </Text>
         </View>
+      </View>
       </View>
     </Pressable>
   );

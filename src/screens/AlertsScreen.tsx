@@ -1,7 +1,4 @@
-﻿import { useState, useRef } from 'react';
-import {
-  Animated,
-  Dimensions,
+﻿import {
   Platform,
   Pressable,
   ScrollView,
@@ -13,8 +10,6 @@ import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../theme';
 import { useAndroidBack } from '../useAndroidBack';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -116,9 +111,9 @@ const BADGE_STYLES: Record<NonNullable<BadgeKind>, { bg: string; text: string; l
   reminder: { bg: '#FEF3C7', text: '#92400E', label: 'REMINDER' },
 };
 
-// ─── Alert row ────────────────────────────────────────────────────────────────
+// ─── Individual Alert Card ────────────────────────────────────────────────────
 
-function AlertRow({
+function AlertCard({
   alert,
   onPress,
 }: {
@@ -128,77 +123,110 @@ function AlertRow({
   const badge = alert.badge ? BADGE_STYLES[alert.badge] : null;
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        backgroundColor: pressed ? 'rgba(11,31,61,0.04)' : colors.white,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-      })}
+    <View
+      style={{
+        marginHorizontal: 16,
+        marginBottom: 12,
+        backgroundColor: colors.white,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: colors.line,
+        overflow: 'hidden',
+      }}
     >
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        {/* Dot */}
-        <View style={{ paddingTop: 5, flexShrink: 0 }}>
-          <View
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: DOT_COLORS[alert.dot],
-            }}
-          />
-        </View>
-
-        {/* Content */}
-        <View style={{ flex: 1 }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              gap: 8,
-              marginBottom: 3,
-            }}
-          >
-            <Text
-              style={{
-                flex: 1,
-                fontSize: 14,
-                fontWeight: alert.read ? '500' : '700',
-                color: colors.ink,
-                letterSpacing: -0.2,
-              }}
-            >
-              {alert.title}
-            </Text>
-            <Text style={{ fontSize: 12, color: colors.mute, flexShrink: 0 }}>
-              {alert.time}
-            </Text>
-          </View>
-
-          <Text style={{ fontSize: 13, color: colors.mute, lineHeight: 18 }}>
-            {alert.body}
-          </Text>
-
-          {badge && (
-            <View
-              style={{
-                alignSelf: 'flex-start',
-                marginTop: 8,
-                backgroundColor: badge.bg,
-                borderRadius: 20,
-                paddingHorizontal: 10,
-                paddingVertical: 3,
-              }}
-            >
-              <Text style={{ fontSize: 10, fontWeight: '700', color: badge.text, letterSpacing: 0.5 }}>
-                {badge.label}
-              </Text>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => ({
+          backgroundColor: pressed ? 'rgba(11,31,61,0.04)' : colors.white,
+        })}
+      >
+        <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
+          <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
+            {/* Indicator Dot */}
+            <View style={{ paddingTop: 6, flexShrink: 0 }}>
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: DOT_COLORS[alert.dot],
+                }}
+              />
             </View>
-          )}
+
+            {/* Main Content */}
+            <View style={{ flex: 1 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  marginBottom: 4,
+                }}
+              >
+                <Text
+                  style={{
+                    flex: 1,
+                    fontSize: 14,
+                    fontWeight: alert.read ? '600' : '700',
+                    color: colors.ink,
+                    letterSpacing: -0.2,
+                    lineHeight: 20,
+                  }}
+                >
+                  {alert.title}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.mute,
+                    flexShrink: 0,
+                    marginTop: 1,
+                  }}
+                >
+                  {alert.time}
+                </Text>
+              </View>
+
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: colors.mute,
+                  lineHeight: 19,
+                }}
+              >
+                {alert.body}
+              </Text>
+
+              {badge && (
+                <View
+                  style={{
+                    alignSelf: 'flex-start',
+                    marginTop: 10,
+                    backgroundColor: badge.bg,
+                    borderRadius: 20,
+                    paddingHorizontal: 10,
+                    paddingVertical: 4,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: '700',
+                      color: badge.text,
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {badge.label}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+    </View>
   );
 }
 
@@ -251,7 +279,7 @@ export function AlertsScreen({
           <Text
             style={{
               flex: 1,
-              fontSize: 28,
+              fontSize: 24,
               fontWeight: '800',
               color: colors.ink,
               letterSpacing: -0.5,
@@ -273,11 +301,11 @@ export function AlertsScreen({
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
         {sections.map((section) => (
-          <View key={section.category} style={{ marginTop: 20 }}>
+          <View key={section.category} style={{ marginTop: 16 }}>
             {/* Section label */}
             <Text
               style={{
@@ -293,35 +321,14 @@ export function AlertsScreen({
               {section.label}
             </Text>
 
-            {/* Card */}
-            <View
-              style={{
-                marginHorizontal: 16,
-                backgroundColor: colors.white,
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: colors.line,
-                overflow: 'hidden',
-              }}
-            >
-              {section.items.map((alert, idx) => (
-                <View key={alert.id}>
-                  <AlertRow
-                    alert={alert}
-                    onPress={() => onOpenAlert(alert.id)}
-                  />
-                  {idx < section.items.length - 1 && (
-                    <View
-                      style={{
-                        height: 1,
-                        backgroundColor: colors.line,
-                        marginLeft: 34,
-                      }}
-                    />
-                  )}
-                </View>
-              ))}
-            </View>
+            {/* Individual Cards per alert */}
+            {section.items.map((alert) => (
+              <AlertCard
+                key={alert.id}
+                alert={alert}
+                onPress={() => onOpenAlert(alert.id)}
+              />
+            ))}
           </View>
         ))}
       </ScrollView>
