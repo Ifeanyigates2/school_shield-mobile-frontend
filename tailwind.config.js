@@ -20,6 +20,7 @@ module.exports = {
         danger: '#F04438',
         bannerBlue: '#EAF2F8',
         bannerBlueBorder: '#D0E4FA',
+        bannerRed: '#D92D20',
         bannerGreen: '#ECFDF3',
         bannerGreenBorder: '#A6F4C5',
         bannerGreenText: '#027A48',
