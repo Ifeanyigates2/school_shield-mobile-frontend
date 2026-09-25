@@ -1,3 +1,11 @@
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+import "./src/global.css"
+
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false,
+});
+
 import { useState } from 'react';
 import { FamilyProvider } from './src/data/FamilyContext';
 import { GuardianSession } from './src/data/family';

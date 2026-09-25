@@ -16,11 +16,39 @@ export type Child = {
   name: string;
   klass: string;
   color: string;
+  gate?: string;
+  droppingOff?: string;
+  pickingUp?: string;
+  studentId?: string;
+  allergies?: string;
+  notes?: string;
 };
 
 export const CHILDREN: Child[] = [
-  { id: 'amara', name: 'Amara Okafor', klass: 'Primary 4A', color: '#1C1917' },
-  { id: 'david', name: 'David Okafor', klass: 'Primary 1B', color: '#BE185D' },
+  {
+    id: 'amara',
+    name: 'Amara Okafor',
+    klass: 'Primary 4A',
+    color: '#1C1917',
+    gate: 'Main Gate',
+    droppingOff: 'You',
+    pickingUp: 'You',
+    studentId: 'GA-2023-049',
+    allergies: 'None recorded',
+    notes: 'Primary pickup by Zara. Chidinma authorized on Mon/Wed/Fri.',
+  },
+  {
+    id: 'david',
+    name: 'David Okafor',
+    klass: 'Primary 1B',
+    color: '#BE185D',
+    gate: 'Main Gate',
+    droppingOff: 'Chidinma',
+    pickingUp: 'Chidinma',
+    studentId: 'GA-2024-118',
+    allergies: 'Mild asthma inhaler in school clinic',
+    notes: 'Must be escorted directly to Year 1 classroom by authorized handler.',
+  },
 ];
 
 export const HANDLERS: Handler[] = [

@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import { Feather } from '@expo/vector-icons';
 import { Field, InitialsAvatar, PrimaryButton } from '../components';
 import { GuardianSession, Handler } from '../data/family';
 import { colors } from '../theme';
@@ -294,6 +295,7 @@ export function InviteScreen({
               <View style={styles.rowBtns}>
                 <View style={{ flex: 1 }}>
                   <PrimaryButton
+                    icon={<Feather name="camera" size={18} color={colors.white} />}
                     label="Take photo"
                     onPress={() => {
                       setHasPhoto(true);
@@ -304,6 +306,7 @@ export function InviteScreen({
                 <View style={{ flex: 1 }}>
                   <PrimaryButton
                     outline
+                    icon={<Feather name="upload" size={18} color={colors.navy} />}
                     label="Upload"
                     onPress={() => {
                       setHasPhoto(true);
