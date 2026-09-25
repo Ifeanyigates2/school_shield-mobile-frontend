@@ -45,7 +45,7 @@ export function ActivityScreen({ onSelectActivity }: ActivityScreenProps) {
               width: 36,
               height: 36,
               borderRadius: 18,
-              backgroundColor: '#12B76A',
+              backgroundColor: '#0F6647',
               alignItems: 'center',
               justifyContent: 'center',
             }}
@@ -129,7 +129,7 @@ export function ActivityScreen({ onSelectActivity }: ActivityScreenProps) {
               // Toggles filter reset or quick reset
               setSelectedFilter('all');
             }}
-            className="w-10 h-10 rounded-full border border-line bg-white items-center justify-center shadow-xs active:bg-slate-50"
+            className="w-12 h-12 rounded-xl border border-line bg-white items-center justify-center shadow-xs active:bg-slate-50"
             hitSlop={8}
           >
             <Feather name="filter" size={18} color="#0B1F3D" />
@@ -151,7 +151,7 @@ export function ActivityScreen({ onSelectActivity }: ActivityScreenProps) {
                 } active:opacity-80`}
               >
                 <Text
-                  className={`text-xs font-semibold ${
+                  className={`text-sm font-semibold ${
                     isActive ? 'text-white' : 'text-slate-700'
                   }`}
                 >
@@ -203,15 +203,15 @@ export function ActivityScreen({ onSelectActivity }: ActivityScreenProps) {
                 {/* CONTENT */}
                 <View className="flex-1">
                   <View className="flex-row items-center justify-between">
-                    <Text className="text-sm font-bold text-ink flex-1 pr-2">
+                    <Text className="text-md font-medium text-ink flex-1 pr-2">
                       {item.title}
                     </Text>
-                    <Text className="text-xs text-mute font-medium">
+                    <Text className="text-sm text-mute font-medium">
                       {item.time}
                     </Text>
                   </View>
 
-                  <Text className="text-xs text-mute mt-1" numberOfLines={1}>
+                  <Text className="text-md text-mute mt-1" numberOfLines={1}>
                     {item.subtitle}
                   </Text>
 
@@ -226,7 +226,7 @@ export function ActivityScreen({ onSelectActivity }: ActivityScreenProps) {
                       marginTop: 8,
                     }}
                   >
-                    <Text className="text-[11px] font-semibold text-[#475467]">
+                    <Text className="text-[11px] font-semibold text-slate-600 tracking-wider">
                       {item.tag}
                     </Text>
                   </View>
