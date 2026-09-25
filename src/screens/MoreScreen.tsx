@@ -144,7 +144,6 @@ function MenuCard({ rows }: { rows: MenuRow[] }) {
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  backgroundColor: row.danger ? '#FEF2F2' : colors.soft,
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,

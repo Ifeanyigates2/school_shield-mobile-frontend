@@ -92,7 +92,6 @@ function SettingsCard({ rows }: { rows: Row[] }) {
                     width: 36,
                     height: 36,
                     borderRadius: 10,
-                    backgroundColor: isDanger ? '#FEF2F2' : colors.soft,
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
