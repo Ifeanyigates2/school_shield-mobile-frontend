@@ -1,4 +1,7 @@
-﻿import {
+import { useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  Dimensions,
   Platform,
   Pressable,
   ScrollView,
@@ -10,6 +13,12 @@ import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../theme';
 import { InitialsAvatar } from '../components';
+import { AccountSecurityScreen } from './AccountSecurityScreen';
+import { AlertsScreen } from './AlertsScreen';
+import { UnauthorizedPickupScreen } from './UnauthorizedPickupScreen';
+import { NotificationsScreen } from './NotificationsScreen';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 // --- Types --------------------------------------------------------------------
 
@@ -119,7 +128,7 @@ function MenuCard({ rows }: { rows: MenuRow[] }) {
               backgroundColor: pressed ? 'rgba(11,31,61,0.04)' : colors.white,
             })}
           >
-            {/* Inner row — static layout so flexDirection is always applied */}
+            {/* Inner row - static layout so flexDirection is always applied */}
             <View
               style={{
                 flexDirection: 'row',
@@ -222,8 +231,89 @@ function MenuCard({ rows }: { rows: MenuRow[] }) {
 // --- Main Screen --------------------------------------------------------------
 
 export function MoreScreen() {
+  type Subscreen = 'main' | 'account-security' | 'alerts' | 'unauthorized-pickup' | 'notifications';
+  const [subscreen, setSubscreen] = useState<Subscreen>('main');
+  const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
+  const detailSlide = useRef(new Animated.Value(SCREEN_WIDTH)).current;
+
+  const openSubscreen = (screen: Subscreen) => {
+    setSubscreen(screen);
+    slideAnim.setValue(SCREEN_WIDTH);
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 68,
+      friction: 11,
+    }).start();
+  };
+
+  const openDetail = (screen: Subscreen) => {
+    setSubscreen(screen);
+    detailSlide.setValue(SCREEN_WIDTH);
+    Animated.spring(detailSlide, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 68,
+      friction: 11,
+    }).start();
+  };
+
+  const closeSubscreen = () => {
+    Animated.timing(slideAnim, {
+      toValue: SCREEN_WIDTH,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => setSubscreen('main'));
+  };
+
+  const closeDetail = () => {
+    Animated.timing(detailSlide, {
+      toValue: SCREEN_WIDTH,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => setSubscreen('alerts'));
+  };
+
   const topInset =
     Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 48;
+
+  // Sub-screen routing
+  if (subscreen === 'account-security') {
+    return (
+      <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
+        <AccountSecurityScreen onBack={closeSubscreen} />
+      </Animated.View>
+    );
+  }
+
+  if (subscreen === 'alerts') {
+    return (
+      <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
+        <AlertsScreen
+          onBack={closeSubscreen}
+          onOpenAlert={(id) => {
+            if (id === 'unauthorized-pickup') openDetail('unauthorized-pickup');
+          }}
+        />
+      </Animated.View>
+    );
+  }
+
+  if (subscreen === 'unauthorized-pickup') {
+    return (
+      <Animated.View style={{ flex: 1, transform: [{ translateX: detailSlide }] }}>
+        <UnauthorizedPickupScreen onBack={closeDetail} />
+      </Animated.View>
+    );
+  }
+
+  if (subscreen === 'notifications') {
+    return (
+      <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
+        <NotificationsScreen onBack={closeSubscreen} />
+      </Animated.View>
+    );
+  }
 
   const needsYouRows: MenuRow[] = [
     {
@@ -233,6 +323,7 @@ export function MoreScreen() {
       sublabel: 'Security, pickup, child and school',
       badge: '2 NEW',
       badgeColor: '#3B82F6',
+      onPress: () => openSubscreen('alerts'),
     },
   ];
 
@@ -272,12 +363,14 @@ export function MoreScreen() {
       icon: 'bell',
       label: 'Notifications',
       sublabel: 'Channels and what you are told',
+      onPress: () => openSubscreen('notifications'),
     },
     {
       id: 'account-security',
       icon: 'lock',
       label: 'Account & security',
       sublabel: 'Password, sessions, deletion',
+      onPress: () => openSubscreen('account-security'),
     },
     {
       id: 'help',
