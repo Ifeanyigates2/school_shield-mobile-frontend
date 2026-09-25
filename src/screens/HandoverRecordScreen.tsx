@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Alert,
   Modal,
@@ -9,10 +9,10 @@ import {
   Text,
   TextInput,
   View,
-} from 'react-native';
-import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
-import { Feather } from '@expo/vector-icons';
-import { ACTIVITIES, ActivityItem, HandoverDetails } from '../data/activities';
+} from "react-native";
+import { StatusBar as ExpoStatusBar } from "expo-status-bar";
+import { Feather } from "@expo/vector-icons";
+import { ACTIVITIES, ActivityItem, HandoverDetails } from "../data/activities";
 
 interface HandoverRecordScreenProps {
   activityId?: string;
@@ -25,21 +25,24 @@ export function HandoverRecordScreen({
   activityId,
   onBack,
 }: HandoverRecordScreenProps) {
-  const topInset = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 48;
+  const topInset =
+    Platform.OS === "android" ? (StatusBar.currentHeight ?? 24) : 48;
   const activity: ActivityItem =
     ACTIVITIES.find((a) => a.id === activityId) ?? DEFAULT_ACTIVITY;
   const details: HandoverDetails = activity.details;
 
   const [showReportModal, setShowReportModal] = useState(false);
-  const [reportReason, setReportReason] = useState<string>('Incorrect handler listed');
-  const [reportNotes, setReportNotes] = useState('');
+  const [reportReason, setReportReason] = useState<string>(
+    "Incorrect handler listed",
+  );
+  const [reportNotes, setReportNotes] = useState("");
   const [reportSubmitted, setReportSubmitted] = useState(false);
 
   const reportOptions = [
-    'Incorrect handler listed',
-    'Time or timestamp discrepancy',
-    'Gate staff or location error',
-    'Unrecognized pickup authorization',
+    "Incorrect handler listed",
+    "Time or timestamp discrepancy",
+    "Gate staff or location error",
+    "Unrecognized pickup authorization",
   ];
 
   const handleSendReport = () => {
@@ -48,15 +51,15 @@ export function HandoverRecordScreen({
       setReportSubmitted(false);
       setShowReportModal(false);
       Alert.alert(
-        'Report Logged',
-        'Your report has been forwarded to Greenfield Academy Security & Administration for immediate review.',
-        [{ text: 'OK' }]
+        "Report Logged",
+        "Your report has been forwarded to Greenfield Academy Security & Administration for immediate review.",
+        [{ text: "OK" }],
       );
-    }, 600);
+    }, 500);
   };
 
-  const isSuccess = details.bannerStatus === 'success';
-  const isDanger = details.bannerStatus === 'danger';
+  const isSuccess = details.bannerStatus === "success";
+  const isDanger = details.bannerStatus === "danger";
 
   return (
     <View className="flex-1 bg-canvas">
@@ -75,7 +78,7 @@ export function HandoverRecordScreen({
           <Feather name="chevron-left" size={24} color="#0B1F3D" />
         </Pressable>
 
-        <Text className="text-base font-bold text-[#0B1F3D]">
+        <Text className="text-lg font-semibold text-[#0B1F3D]">
           Handover record
         </Text>
 
@@ -89,12 +92,12 @@ export function HandoverRecordScreen({
       >
         {/* BANNER STATUS CARD */}
         <View
-          className={`rounded-3xl p-5 items-center mb-4 border ${
+          className={`rounded-3xl p-5 items-center mb-4  ${
             isSuccess
-              ? 'bg-[#ECFDF3] border-[#A6F4C5]'
+              ? "bg-bannerGreen"
               : isDanger
-              ? 'bg-[#FEF3F2] border-[#FECDCA]'
-              : 'bg-[#EFF8FF] border-[#B2DDFF]'
+                ? "bg-bannerRed"
+                : "bg-bannerBlue"
           }`}
         >
           <View
@@ -103,43 +106,52 @@ export function HandoverRecordScreen({
               height: 56,
               borderRadius: 28,
               backgroundColor: isSuccess
-                ? '#027A48'
+                ? "#027A48"
                 : isDanger
-                ? '#D92D20'
-                : '#0B1F3D',
-              alignItems: 'center',
-              justifyContent: 'center',
+                  ? "#D92D20"
+                  : "#0B1F3D",
+              alignItems: "center",
+              justifyContent: "center",
               marginBottom: 12,
             }}
           >
             {isSuccess ? (
               <Feather name="check" size={28} color="#FFFFFF" strokeWidth={3} />
             ) : isDanger ? (
-              <Text style={{ color: '#FFFFFF', fontWeight: '900', fontSize: 24, lineHeight: 28 }}>!</Text>
+              <Text
+                style={{
+                  color: "#FFFFFF",
+                  fontWeight: "900",
+                  fontSize: 24,
+                  lineHeight: 28,
+                }}
+              >
+                !
+              </Text>
             ) : (
               <Feather name="info" size={26} color="#FFFFFF" />
             )}
           </View>
 
           <Text
-            className={`text-base font-bold text-center ${
+            className={`text-xl font-bold text-center ${
               isSuccess
-                ? 'text-[#027A48]'
+                ? "text-success"
                 : isDanger
-                ? 'text-[#B42318]'
-                : 'text-[#175CD3]'
+                  ? "text-danger"
+                  : "text-info"
             }`}
           >
             {details.bannerTitle}
           </Text>
 
           <Text
-            className={`text-xs font-semibold text-center mt-1 ${
+            className={`text-md font-semibold text-center mt-1 ${
               isSuccess
-                ? 'text-[#027A48]'
+                ? "text-success"
                 : isDanger
-                ? 'text-[#B42318]'
-                : 'text-[#175CD3]'
+                  ? "text-danger"
+                  : "text-info"
             }`}
           >
             {details.bannerDate}
@@ -148,89 +160,201 @@ export function HandoverRecordScreen({
 
         {/* SPECIFICATIONS TABLE CARD */}
         <View className="bg-white rounded-3xl border border-line p-4 shadow-sm mb-4">
-          <View style={{ borderBottomWidth: 1, borderBottomColor: '#F2F4F7' }} className="flex-row items-center justify-between py-3">
+          <View
+            style={{ borderBottomWidth: 1, borderBottomColor: "#F2F4F7" }}
+            className="flex-row items-center justify-between py-3"
+          >
             <View style={{ width: 110 }}>
-              <Text style={{ fontSize: 12, color: '#667085', fontWeight: '500' }}>Event</Text>
+              <Text
+                style={{ fontSize: 16, color: "#667085", fontWeight: "400" }}
+              >
+                Event
+              </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#101828', fontWeight: '600', textAlign: 'right' }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#101828",
+                  fontWeight: "500",
+                  textAlign: "right",
+                }}
+              >
                 {details.event}
               </Text>
             </View>
           </View>
 
-          <View style={{ borderBottomWidth: 1, borderBottomColor: '#F2F4F7' }} className="flex-row items-center justify-between py-3">
+          <View
+            style={{ borderBottomWidth: 1, borderBottomColor: "#F2F4F7" }}
+            className="flex-row items-center justify-between py-3"
+          >
             <View style={{ width: 110 }}>
-              <Text style={{ fontSize: 12, color: '#667085', fontWeight: '500' }}>Child</Text>
+              <Text
+                style={{ fontSize: 16, color: "#667085", fontWeight: "400" }}
+              >
+                Child
+              </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#101828', fontWeight: '600', textAlign: 'right' }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#101828",
+                  fontWeight: "500",
+                  textAlign: "right",
+                }}
+              >
                 {details.child}
               </Text>
             </View>
           </View>
 
-          <View style={{ borderBottomWidth: 1, borderBottomColor: '#F2F4F7' }} className="flex-row items-center justify-between py-3">
+          <View
+            style={{ borderBottomWidth: 1, borderBottomColor: "#F2F4F7" }}
+            className="flex-row items-center justify-between py-3"
+          >
             <View style={{ width: 110 }}>
-              <Text style={{ fontSize: 12, color: '#667085', fontWeight: '500' }}>Released to</Text>
+              <Text
+                style={{ fontSize: 16, color: "#667085", fontWeight: "400" }}
+              >
+                Released to
+              </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#101828', fontWeight: '600', textAlign: 'right' }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#101828",
+                  fontWeight: "500",
+                  textAlign: "right",
+                }}
+              >
                 {details.releasedTo}
               </Text>
             </View>
           </View>
 
-          <View style={{ borderBottomWidth: 1, borderBottomColor: '#F2F4F7' }} className="flex-row items-center justify-between py-3">
+          <View
+            style={{ borderBottomWidth: 1, borderBottomColor: "#F2F4F7" }}
+            className="flex-row items-center justify-between py-3"
+          >
             <View style={{ width: 110 }}>
-              <Text style={{ fontSize: 12, color: '#667085', fontWeight: '500' }}>Date</Text>
+              <Text
+                style={{ fontSize: 16, color: "#667085", fontWeight: "400" }}
+              >
+                Date
+              </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#101828', fontWeight: '600', textAlign: 'right' }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#101828",
+                  fontWeight: "500",
+                  textAlign: "right",
+                }}
+              >
                 {details.date}
               </Text>
             </View>
           </View>
 
-          <View style={{ borderBottomWidth: 1, borderBottomColor: '#F2F4F7' }} className="flex-row items-center justify-between py-3">
+          <View
+            style={{ borderBottomWidth: 1, borderBottomColor: "#F2F4F7" }}
+            className="flex-row items-center justify-between py-3"
+          >
             <View style={{ width: 110 }}>
-              <Text style={{ fontSize: 12, color: '#667085', fontWeight: '500' }}>Time</Text>
+              <Text
+                style={{ fontSize: 16, color: "#667085", fontWeight: "400" }}
+              >
+                Time
+              </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#101828', fontWeight: '600', textAlign: 'right' }}>
+              <Text
+                style={{
+                  fontSize: 16    ,
+                  color: "#101828",
+                  fontWeight: "500",
+                  textAlign: "right",
+                }}
+              >
                 {details.time}
               </Text>
             </View>
           </View>
 
-          <View style={{ borderBottomWidth: 1, borderBottomColor: '#F2F4F7' }} className="flex-row items-center justify-between py-3">
+          <View
+            style={{ borderBottomWidth: 1, borderBottomColor: "#F2F4F7" }}
+            className="flex-row items-center justify-between py-3"
+          >
             <View style={{ width: 110 }}>
-              <Text style={{ fontSize: 12, color: '#667085', fontWeight: '500' }}>Gate</Text>
+              <Text
+                style={{ fontSize: 16, color: "#667085", fontWeight: "400" }}
+              >
+                Gate
+              </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#101828', fontWeight: '600', textAlign: 'right' }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#101828",
+                  fontWeight: "500",
+                  textAlign: "right",
+                }}
+              >
                 {details.gate}
               </Text>
             </View>
           </View>
 
-          <View style={{ borderBottomWidth: 1, borderBottomColor: '#F2F4F7' }} className="flex-row items-center justify-between py-3">
+          <View
+            style={{ borderBottomWidth: 1, borderBottomColor: "#F2F4F7" }}
+            className="flex-row items-center justify-between py-3"
+          >
             <View style={{ width: 110 }}>
-              <Text style={{ fontSize: 12, color: '#667085', fontWeight: '500' }}>Verified by</Text>
+              <Text
+                style={{ fontSize: 16, color: "#667085", fontWeight: "400" }}
+              >
+                Verified by
+              </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#101828', fontWeight: '600', textAlign: 'right' }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#101828",
+                  fontWeight: "500",
+                  textAlign: "right",
+                }}
+              >
                 {details.verifiedBy}
               </Text>
             </View>
           </View>
 
-          <View style={{ borderBottomWidth: 1, borderBottomColor: '#F2F4F7' }} className="flex-row items-center justify-between py-3">
+          <View
+            style={{ borderBottomWidth: 1, borderBottomColor: "#F2F4F7" }}
+            className="flex-row items-center justify-between py-3"
+          >
             <View style={{ width: 110 }}>
-              <Text style={{ fontSize: 12, color: '#667085', fontWeight: '500' }}>Authorization</Text>
+              <Text
+                style={{ fontSize: 16, color: "#667085", fontWeight: "400" }}
+              >
+                Authorization
+              </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#101828', fontWeight: '600', textAlign: 'right' }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#101828",
+                  fontWeight: "500",
+                  textAlign: "right",
+                }}
+              >
                 {details.authorization}
               </Text>
             </View>
@@ -238,10 +362,21 @@ export function HandoverRecordScreen({
 
           <View className="flex-row items-center justify-between py-3">
             <View style={{ width: 110 }}>
-              <Text style={{ fontSize: 12, color: '#667085', fontWeight: '500' }}>Approved by</Text>
+              <Text
+                style={{ fontSize: 16, color: "#667085", fontWeight: "400" }}
+              >
+                Approved by
+              </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#101828', fontWeight: '600', textAlign: 'right' }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#101828",
+                  fontWeight: "500",
+                  textAlign: "right",
+                }}
+              >
                 {details.approvedBy}
               </Text>
             </View>
@@ -249,18 +384,19 @@ export function HandoverRecordScreen({
         </View>
 
         {/* AUDIT LOCK NOTICE BOX */}
-        <View className="bg-[#F8FAFC] border border-line rounded-2xl p-4 mb-4">
-          <Text className="text-xs text-slate-500 leading-5">
-            This record cannot be edited or deleted. Greenfield Academy keeps a matching copy.
+        <View className="bg-bannerBlue border border-line rounded-2xl p-4 mb-4">
+          <Text className="text-md text-ink leading-5">
+            This record cannot be edited or deleted. Greenfield Academy keeps a
+            matching copy.
           </Text>
         </View>
 
         {/* REPORT PROBLEM BUTTON */}
         <Pressable
           onPress={() => setShowReportModal(true)}
-          className="bg-white border border-[#D0D5DD] rounded-2xl py-3.5 items-center justify-center shadow-xs active:bg-slate-50"
+          className="bg-white h-14 border border-[#D0D5DD] rounded-2xl py-3.5 items-center justify-center shadow-xs active:bg-slate-50"
         >
-          <Text className="text-sm font-semibold text-slate-800">
+          <Text className="text-md font-semibold text-slate-800">
             Report a problem with this record
           </Text>
         </Pressable>
@@ -287,11 +423,11 @@ export function HandoverRecordScreen({
               </Pressable>
             </View>
 
-            <Text className="text-xs font-semibold text-mute uppercase tracking-wider mb-2">
+            <Text className="text-md font-semibold text-mute uppercase tracking-wider mb-2">
               Select reason
             </Text>
 
-            <View className="gap-2 mb-4">
+            <View className="gap-3 mb-4">
               {reportOptions.map((opt) => {
                 const selected = reportReason === opt;
                 return (
@@ -300,22 +436,24 @@ export function HandoverRecordScreen({
                     onPress={() => setReportReason(opt)}
                     className={`flex-row items-center p-3 rounded-xl border ${
                       selected
-                        ? 'border-navy bg-slate-50'
-                        : 'border-line bg-white'
+                        ? "border-navy bg-slate-50"
+                        : "border-line bg-white"
                     }`}
                   >
                     <View
-                      className={`w-4 h-4 rounded-full border items-center justify-center mr-3 ${
-                        selected
-                          ? 'border-navy bg-navy'
-                          : 'border-slate-300'
+                      className={`w-5 h-5 rounded-full border items-center justify-center mr-3 ${
+                        selected ? "border-navy bg-navy" : "border-slate-300"
                       }`}
                     >
-                      {selected && <View className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      {selected && (
+                        <View className="w-2 h-2 rounded-full bg-white" />
+                      )}
                     </View>
                     <Text
-                      className={`text-xs flex-1 ${
-                        selected ? 'font-bold text-navy' : 'font-medium text-ink'
+                      className={`text-sm flex-1 ${
+                        selected
+                          ? "font-bold text-navy"
+                          : "font-medium text-ink"
                       }`}
                     >
                       {opt}
@@ -325,7 +463,7 @@ export function HandoverRecordScreen({
               })}
             </View>
 
-            <Text className="text-xs font-semibold text-mute uppercase tracking-wider mb-2">
+            <Text className="text-sm font-semibold text-mute uppercase tracking-wider mb-2">
               Additional Details (Optional)
             </Text>
             <TextInput
@@ -333,7 +471,7 @@ export function HandoverRecordScreen({
               onChangeText={setReportNotes}
               placeholder="Explain any concerns for the gate supervisor..."
               placeholderTextColor="#98A2B3"
-              className="border border-line rounded-xl p-3 text-xs text-ink mb-4 min-h-[70px]"
+              className="border border-line rounded-xl p-3 text-sm text-ink mb-4 min-h-[70px]"
               multiline
               textAlignVertical="top"
             />
@@ -341,12 +479,12 @@ export function HandoverRecordScreen({
             <Pressable
               onPress={handleSendReport}
               disabled={reportSubmitted}
-              className={`py-3.5 rounded-2xl items-center ${
-                reportSubmitted ? 'bg-navy/70' : 'bg-navy active:opacity-90'
+              className={`py-3.5 h-11 rounded-2xl items-center justify-center ${
+                reportSubmitted ? "bg-navy/70" : "bg-navy active:opacity-90"
               }`}
             >
-              <Text className="text-white text-sm font-bold">
-                {reportSubmitted ? 'Submitting...' : 'Submit problem report'}
+              <Text className="text-white text-md font-bold">
+                {reportSubmitted ? "Submitting..." : "Submit problem report"}
               </Text>
             </Pressable>
           </View>
