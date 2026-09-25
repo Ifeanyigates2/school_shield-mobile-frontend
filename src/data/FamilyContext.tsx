@@ -1,20 +1,59 @@
 import { Dispatch, ReactNode, SetStateAction, createContext, useContext, useMemo, useState } from 'react';
-import { CHILDREN, Child, HANDLERS, Handler, WEEK } from './family';
+import {
+  Authorization,
+  CHILDREN,
+  Child,
+  GuardianSession,
+  HANDLERS,
+  Handler,
+  INITIAL_AUTHORIZATIONS,
+  WEEK_PLANS,
+  WeekPlans,
+  firstName,
+  mergeHandlers,
+} from './family';
 
 type FamilyState = {
+  guardianName: string;
   children: Child[];
   handlers: Handler[];
   setHandlers: Dispatch<SetStateAction<Handler[]>>;
-  week: typeof WEEK;
+  weekPlans: WeekPlans;
+  setWeekPlans: Dispatch<SetStateAction<WeekPlans>>;
+  authorizations: Authorization[];
+  setAuthorizations: Dispatch<SetStateAction<Authorization[]>>;
+  session: GuardianSession | null;
 };
 
 const FamilyContext = createContext<FamilyState | null>(null);
 
-export function FamilyProvider({ children }: { children: ReactNode }) {
-  const [handlers, setHandlers] = useState(HANDLERS);
+export function FamilyProvider({
+  children,
+  session = null,
+}: {
+  children: ReactNode;
+  session?: GuardianSession | null;
+}) {
+  const kids = session?.childIds.length
+    ? CHILDREN.filter((c) => session.childIds.includes(c.id))
+    : CHILDREN;
+  const [handlers, setHandlers] = useState(() => mergeHandlers(HANDLERS, session?.handler ?? null));
+  const [weekPlans, setWeekPlans] = useState(WEEK_PLANS);
+  const [authorizations, setAuthorizations] = useState(INITIAL_AUTHORIZATIONS);
+  const guardianName = firstName(session?.name ?? '') || 'Zara';
   const value = useMemo(
-    () => ({ children: CHILDREN, handlers, setHandlers, week: WEEK }),
-    [handlers],
+    () => ({
+      guardianName,
+      children: kids,
+      handlers,
+      setHandlers,
+      weekPlans,
+      setWeekPlans,
+      authorizations,
+      setAuthorizations,
+      session,
+    }),
+    [guardianName, kids, handlers, weekPlans, authorizations, session],
   );
   return <FamilyContext.Provider value={value}>{children}</FamilyContext.Provider>;
 }

@@ -14,9 +14,10 @@ export type GuardianPage =
   | 'pickup';
 
 export function HomeScreen() {
-  const { children, handlers } = useFamily();
+  const { guardianName, children, handlers } = useFamily();
   const [page, setPage] = useState<GuardianPage>('home');
-  const [childId, setChildId] = useState('amara');
+  const [childId, setChildId] = useState(children[0]?.id ?? 'amara');
+  const sessionChildIds = children.map((c) => c.id);
   const [handlerId, setHandlerId] = useState('chidinma');
   const [pickupStart, setPickupStart] = useState<'week' | 'choose'>('week');
   const [pickupKey, setPickupKey] = useState(0);
@@ -29,7 +30,7 @@ export function HomeScreen() {
         onOpenPickup={(id) => {
           const handler = handlers.find((h) => h.id === id);
           setHandlerId(id);
-          setChildId(firstChildForHandler(handler, childId));
+          setChildId(firstChildForHandler(handler, children[0]?.id ?? childId, sessionChildIds));
           setPickupStart('choose');
           setPickupKey((n) => n + 1);
           setPage('pickup');
@@ -59,7 +60,7 @@ export function HomeScreen() {
       <ExpoStatusBar style="dark" />
       <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: top }]}>
         <Text style={styles.greet}>Good morning,</Text>
-        <Text style={styles.name}>Zara</Text>
+        <Text style={styles.name}>{guardianName}</Text>
         <Text style={styles.body}>Your children and approved handlers are ready for pickup.</Text>
 
         {children.map((child) => (

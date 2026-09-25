@@ -6,11 +6,17 @@ import { useFamily } from '../data/FamilyContext';
 import {
   Collector,
   Job,
+  activeAuthorization,
+  cancelAuthorization,
   childNames,
   collectorProfile,
   eligibleHandlers,
+  formatToday,
+  replaceAuthorization,
+  setWeekHandler,
 } from '../data/family';
 import { colors } from '../theme';
+import { useAndroidBack } from '../useAndroidBack';
 
 type Page = 'week' | 'choose' | 'onetime' | 'review' | 'authorized' | 'change' | 'states';
 
@@ -28,15 +34,29 @@ export function PickupFlow({
   onBack: () => void;
   onHandlers?: () => void;
 }) {
-  const { children, handlers, setHandlers, week } = useFamily();
+  const { children, handlers, weekPlans, setWeekPlans, authorizations, setAuthorizations } = useFamily();
   const child = children.find((c) => c.id === childId) ?? children[0];
   const [page, setPage] = useState<Page>(startAt);
   const [tab, setTab] = useState<Job>('pickup');
-  const [oneName, setOneName] = useState('Daniel Adeyemi');
-  const [onePhone, setOnePhone] = useState('809 553 2210');
+  const [oneName, setOneName] = useState('');
+  const [onePhone, setOnePhone] = useState('');
   const [oneRel, setOneRel] = useState('Uncle');
   const [onePhoto, setOnePhoto] = useState(false);
   const [collector, setCollector] = useState<Collector>({ kind: 'saved', handlerId });
+  const [changeDay, setChangeDay] = useState<string | null>(null);
+  const [sharedAgain, setSharedAgain] = useState(false);
+  const todayLabel = formatToday();
+  const hardwareBack = () => {
+    if (page === 'choose') setPage('week');
+    else if (page === 'onetime') setPage('choose');
+    else if (page === 'review') setPage(collector.kind === 'onetime' ? 'onetime' : 'choose');
+    else if (page === 'authorized') setPage('week');
+    else if (page === 'states') setPage('authorized');
+    else if (page === 'change') setPage('week');
+    else onBack();
+  };
+  useAndroidBack(hardwareBack);
+
   const allowed = useMemo(
     () => eligibleHandlers(handlers, child.id, tab),
     [handlers, child.id, tab],
@@ -48,9 +68,13 @@ export function PickupFlow({
     collector.kind === 'saved' ? { kind: 'saved', handlerId: selectedId || handlerId } : collector,
     handlers,
   );
+  const live = activeAuthorization(authorizations, child.id, tab);
+  const livePerson = live ? collectorProfile(live.collector, handlers) : null;
+  const weekRows = weekPlans[child.id]?.[tab] ?? [];
   const top = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 54;
   const jobLabel = tab === 'pickup' ? 'pickup' : 'drop-off';
   const jobTitle = tab === 'pickup' ? 'Pickup' : 'Drop-off';
+  const phoneReady = onePhone.replace(/\s/g, '').length >= 7;
 
   const chooseSaved = (id: string) => {
     onSelectHandler(id);
@@ -58,13 +82,28 @@ export function PickupFlow({
   };
 
   const confirmAuthorization = () => {
-    if (collector.kind === 'saved') {
-      const id = selectedId;
-      setHandlers((list) =>
-        list.map((h) => ({ ...h, authorizedToday: h.id === id })),
-      );
+    const nextCollector: Collector =
+      collector.kind === 'saved' ? { kind: 'saved', handlerId: selectedId } : collector;
+    setAuthorizations((list) =>
+      replaceAuthorization(list, {
+        id: `auth-${child.id}-${tab}-${Date.now()}`,
+        childId: child.id,
+        job: tab,
+        collector: nextCollector,
+        createdLabel: 'Created just now · code delivered by SMS · not yet used',
+        status: 'active',
+      }),
+    );
+    if (changeDay && nextCollector.kind === 'saved') {
+      setWeekPlans((plans) => setWeekHandler(plans, child.id, tab, changeDay, nextCollector.handlerId));
+      setChangeDay(null);
     }
     setPage('authorized');
+  };
+
+  const cancelAndChoose = () => {
+    setAuthorizations((list) => cancelAuthorization(list, child.id, tab));
+    setPage('choose');
   };
 
   if (page === 'choose') {
@@ -138,7 +177,7 @@ export function PickupFlow({
             <Text style={styles.amberText}>This person will only be authorized for this pickup. They are not added to your saved handlers.</Text>
           </View>
           <Field label="Full name" value={oneName} onChangeText={setOneName} autoCapitalize="words" />
-          <Text style={styles.meta}>As written on the ID he will show at the gates.</Text>
+          <Text style={styles.meta}>As written on the ID they will show at the gates.</Text>
           <View style={{ height: 14 }} />
           <Field label="Phone number" value={onePhone} onChangeText={setOnePhone} keyboardType="phone-pad" prefix="+234" />
           <Text style={styles.meta}>The code is sent here and only works from this number.</Text>
@@ -152,12 +191,12 @@ export function PickupFlow({
             ))}
           </View>
           <Pressable onPress={() => setOnePhoto(true)} style={styles.photo}>
-            <Text style={styles.name}>{onePhoto ? 'Photo added' : 'Take his photo · required'}</Text>
+            <Text style={styles.name}>{onePhoto ? 'Photo added' : 'Take their photo · required'}</Text>
             <Text style={styles.meta}>Required — staff match this face</Text>
           </Pressable>
           <PrimaryButton
             label="Continue"
-            enabled={oneName.trim().length > 0 && onePhoto}
+            enabled={oneName.trim().length > 0 && phoneReady && onePhoto}
             onPress={() => {
               setCollector({
                 kind: 'onetime',
@@ -197,7 +236,7 @@ export function PickupFlow({
               <Text style={styles.meta}>One-time · not added to saved handlers</Text>
             ) : null}
             <Text style={[styles.kicker, { marginTop: 14 }]}>DATE</Text>
-            <Text style={styles.name}>Monday, 7 September</Text>
+            <Text style={styles.name}>{todayLabel}</Text>
             <Text style={styles.meta}>Today</Text>
             <Text style={[styles.kicker, { marginTop: 14 }]}>TIME</Text>
             <Text style={styles.name}>{tab === 'pickup' ? '2:30 PM – 3:30 PM' : '7:15 AM – 8:00 AM'}</Text>
@@ -234,7 +273,7 @@ export function PickupFlow({
             </View>
             <View style={styles.notActive}><Text style={styles.notActiveText}>NOT YET ACTIVE</Text></View>
           </View>
-          <DarkRow label="Date" value="Monday, 7 September" />
+          <DarkRow label="Date" value={todayLabel} />
           <DarkRow label={tab === 'pickup' ? 'Pickup window' : 'Drop-off window'} value={tab === 'pickup' ? '2:30 PM – 3:30 PM' : '7:15 AM – 8:00 AM'} />
           <DarkRow label="Gate" value="Main Gate" />
           <Text style={styles.darkMeta}>
@@ -244,7 +283,16 @@ export function PickupFlow({
         <View style={{ flex: 1 }} />
         <PrimaryButton inverted label={`View ${jobLabel} details`} onPress={() => setPage('states')} />
         <View style={{ height: 10 }} />
-        <PrimaryButton ghost label={`Share with ${person.firstName} again`} onPress={() => {}} />
+        <PrimaryButton
+          ghost
+          label={`Share with ${person.firstName} again`}
+          onPress={() => setSharedAgain(true)}
+        />
+        {sharedAgain ? (
+          <Text style={[styles.darkMeta, { textAlign: 'center', marginTop: 8 }]}>
+            Code sent again by SMS to +234 {person.phone}
+          </Text>
+        ) : null}
       </View>
     );
   }
@@ -287,37 +335,57 @@ export function PickupFlow({
         <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: top }]}>
           <Nav title={`Change ${jobLabel}`} onBack={() => setPage('week')} />
           <Text style={styles.kicker}>CURRENT {tab === 'pickup' ? 'PICKUP' : 'DROP-OFF'}</Text>
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <InitialsAvatar name={person.name} size={48} color={person.color} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{person.name}</Text>
-                <Text style={styles.meta}>{person.relationship} · {tab === 'pickup' ? '2:30 PM' : '7:15 AM'} · Main Gate</Text>
+          {live && livePerson ? (
+            <>
+              <View style={styles.card}>
+                <View style={styles.row}>
+                  <InitialsAvatar name={livePerson.name} size={48} color={livePerson.color} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.name}>{livePerson.name}</Text>
+                    <Text style={styles.meta}>
+                      {livePerson.relationship}
+                      {live.collector.kind === 'onetime' ? ' · one-time' : ''} · {tab === 'pickup' ? '2:30 PM' : '7:15 AM'} · Main Gate
+                    </Text>
+                  </View>
+                  <View style={styles.badge}><Text style={styles.badgeText}>ACTIVE</Text></View>
+                </View>
+                <Text style={styles.meta}>{live.createdLabel}</Text>
               </View>
-              <View style={styles.badge}><Text style={styles.badgeText}>ACTIVE</Text></View>
-            </View>
-            <Text style={styles.meta}>Created 6:40 AM · code delivered by SMS · not yet used</Text>
-          </View>
-          <View style={styles.red}>
-            <Text style={styles.redText}>
-              Changing the {jobLabel} person will cancel the current authorization. {person.firstName}’s code stops working immediately and they are told. Greenfield Academy and the Main Gate are updated at the same time.
-            </Text>
-          </View>
-          <Text style={styles.kicker}>WHAT HAPPENS NEXT</Text>
-          {[
-            `${person.firstName}’s authorization is cancelled`,
-            'They and the Main Gate are notified',
-            'You choose the new person',
-            'A fresh code is issued to them',
-          ].map((item, i) => (
-            <View key={item} style={styles.nextRow}>
-              <View style={[styles.num, i < 2 && styles.numOn]}><Text style={styles.numText}>{i + 1}</Text></View>
-              <Text style={styles.name}>{item}</Text>
-            </View>
-          ))}
-          <PrimaryButton danger label="Cancel and choose someone else" onPress={() => setPage('choose')} />
-          <View style={{ height: 10 }} />
-          <PrimaryButton outline label={`Keep ${person.firstName}`} onPress={() => setPage('week')} />
+              <View style={styles.red}>
+                <Text style={styles.redText}>
+                  Changing the {jobLabel} person will cancel the current authorization. {livePerson.firstName}’s code stops working immediately and they are told. Greenfield Academy and the Main Gate are updated at the same time.
+                </Text>
+              </View>
+              <Text style={styles.kicker}>WHAT HAPPENS NEXT</Text>
+              {[
+                `${livePerson.firstName}’s authorization is cancelled`,
+                'They and the Main Gate are notified',
+                'You choose the new person',
+                'A fresh code is issued to them',
+              ].map((item, i) => (
+                <View key={item} style={styles.nextRow}>
+                  <View style={[styles.num, i < 2 && styles.numOn]}><Text style={styles.numText}>{i + 1}</Text></View>
+                  <Text style={styles.name}>{item}</Text>
+                </View>
+              ))}
+              <PrimaryButton danger label="Cancel and choose someone else" onPress={cancelAndChoose} />
+              <View style={{ height: 10 }} />
+              <PrimaryButton outline label={`Keep ${livePerson.firstName}`} onPress={() => setPage('week')} />
+            </>
+          ) : (
+            <>
+              <View style={styles.card}>
+                <Text style={styles.name}>No {jobLabel} authorized</Text>
+                <Text style={styles.meta}>
+                  {child.name.split(' ')[0]} has no live {jobLabel} for today
+                  {changeDay ? ` · ${changeDay} is unassigned` : ''}.
+                </Text>
+              </View>
+              <PrimaryButton label="Choose someone" onPress={() => setPage('choose')} />
+              <View style={{ height: 10 }} />
+              <PrimaryButton outline label="Back to week" onPress={() => setPage('week')} />
+            </>
+          )}
         </ScrollView>
       </View>
     );
@@ -359,6 +427,15 @@ export function PickupFlow({
             <Text style={[styles.tabText, tab === 'dropoff' && styles.tabTextOn]}>Manage Drop-off</Text>
           </Pressable>
         </View>
+        {live && livePerson ? (
+          <Pressable style={styles.card} onPress={() => { setChangeDay(null); setPage('change'); }}>
+            <Text style={styles.kicker}>TODAY</Text>
+            <Text style={styles.name}>{livePerson.name}</Text>
+            <Text style={styles.meta}>
+              {live.collector.kind === 'onetime' ? 'One-time' : livePerson.relationship} · {child.name.split(' ')[0]} · {jobLabel}
+            </Text>
+          </Pressable>
+        ) : null}
         <View style={styles.weekHead}>
           <Text style={styles.name}>This Week ▾</Text>
           <View style={styles.avatars}>
@@ -372,7 +449,7 @@ export function PickupFlow({
             <Text style={[styles.meta, { flex: 1 }]}>Day</Text>
             <Text style={[styles.meta, { flex: 2 }]}>Handler</Text>
           </View>
-          {week.map((row) => {
+          {weekRows.map((row) => {
             const assigned = handlers.find((x) => x.id === row.handlerId);
             const canDoJob = assigned
               && assigned.status === 'ACTIVE'
@@ -386,7 +463,19 @@ export function PickupFlow({
                   {shown ? <InitialsAvatar name={shown.name} size={28} color={shown.color} /> : null}
                   <Text style={styles.meta}>{shown ? shown.name.split(' ').join('\n') : 'Unassigned'}</Text>
                 </View>
-                <Pressable onPress={() => { if (shown) chooseSaved(shown.id); setPage('change'); }}><Text>✎</Text></Pressable>
+                <Pressable
+                  onPress={() => {
+                    setChangeDay(row.day);
+                    if (shown) {
+                      chooseSaved(shown.id);
+                      setPage('change');
+                    } else {
+                      setPage('choose');
+                    }
+                  }}
+                >
+                  <Text>✎</Text>
+                </Pressable>
               </View>
             );
           })}
@@ -400,7 +489,10 @@ export function PickupFlow({
         <PrimaryButton
           label={`Authorize today’s ${jobLabel}`}
           enabled={weekPeople.length > 0 || tab === 'pickup'}
-          onPress={() => setPage('choose')}
+          onPress={() => {
+            setChangeDay(null);
+            setPage('choose');
+          }}
         />
       </ScrollView>
     </View>
