@@ -9,6 +9,8 @@ import {
   View,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import { ApiError } from '../api/client';
+import { useSession } from '../api/session';
 import { Field, PrimaryButton, Wordmark } from '../components';
 import { colors } from '../theme';
 import { useAndroidBack } from '../useAndroidBack';
@@ -22,11 +24,12 @@ export function LoginScreen({
   onForgot: () => void;
   onSuccess: () => void;
 }) {
+  const { signIn } = useSession();
   const [email, setEmail] = useState('');
-  // TODO(ship): drop the hard-coded "Welcome back, Zara" title and the demo password pre-fill.
-  const [password, setPassword] = useState('password');
+  const [password, setPassword] = useState('');
   const [hidden, setHidden] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const canSubmit = useMemo(() => email.trim().length > 0 && password.length > 0, [email, password]);
   useAndroidBack(onBack);
@@ -43,7 +46,7 @@ export function LoginScreen({
           <Text style={styles.back}>‹</Text>
         </Pressable>
         <Wordmark light />
-        <Text style={styles.title}>Welcome back, Zara</Text>
+        <Text style={styles.title}>Welcome back</Text>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -75,14 +78,23 @@ export function LoginScreen({
         <View style={{ flex: 1 }} />
         <PrimaryButton
           inverted
-          label="Log in"
-          onPress={() => {
+          label={submitting ? 'Logging in…' : 'Log in'}
+          enabled={!submitting}
+          onPress={async () => {
             if (!canSubmit) {
               setError('Enter your phone number or email, and password.');
               return;
             }
             setError(null);
-            onSuccess();
+            setSubmitting(true);
+            try {
+              await signIn(email, password);
+              onSuccess();
+            } catch (err) {
+              setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.');
+            } finally {
+              setSubmitting(false);
+            }
           }}
         />
       </KeyboardAvoidingView>

@@ -12,17 +12,20 @@ import {
   View,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import { forgotPassword, resetPassword } from '../api/auth';
+import { ApiError } from '../api/client';
 import { Field, PrimaryButton } from '../components';
 import { colors } from '../theme';
 import { useAndroidBack } from '../useAndroidBack';
 
-// TODO(ship): replace demo reset code 0000 with the SMS verification API.
-const RESET_CODE = '0000';
 const POLICY =
-  'Password must include at least one capital letter, one number, and one special character.';
+  'Password must be at least 8 characters and include a capital letter, a number, and a special character.';
 
 const meetsPolicy = (password: string) =>
-  /[A-Z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password);
+  password.length >= 8 && /[A-Z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password);
+
+const messageOf = (err: unknown) =>
+  err instanceof ApiError ? err.message : 'Something went wrong. Try again.';
 
 export function ResetPasswordScreen({ onBack }: { onBack: () => void }) {
   const [step, setStep] = useState(0);
@@ -31,6 +34,9 @@ export function ResetPasswordScreen({ onBack }: { onBack: () => void }) {
   const [password, setPassword] = useState('');
   const [contact, setContact] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  // Only a development backend returns the code; production sends it by SMS.
+  const [demoCode, setDemoCode] = useState<string | null>(null);
 
   const goBack = () => {
     setError(null);
@@ -68,14 +74,25 @@ export function ResetPasswordScreen({ onBack }: { onBack: () => void }) {
                 <Step n={4} label="Sign in with it" />
               </View>
               <PrimaryButton
-                label="Send code"
-                onPress={() => {
+                label={busy ? 'Sending…' : 'Send code'}
+                enabled={!busy}
+                onPress={async () => {
                   if (!identifier.trim()) {
                     setError('Enter the phone number or email on your account.');
                     return;
                   }
                   setError(null);
-                  setStep(1);
+                  setBusy(true);
+                  try {
+                    const result = await forgotPassword(identifier.trim());
+                    setDemoCode(result.demoCode ?? null);
+                    setCode('');
+                    setStep(1);
+                  } catch (err) {
+                    setError(messageOf(err));
+                  } finally {
+                    setBusy(false);
+                  }
                 }}
               />
               <View style={{ height: 12 }} />
@@ -89,19 +106,18 @@ export function ResetPasswordScreen({ onBack }: { onBack: () => void }) {
               <Text style={styles.body}>We sent a 4-digit code to {identifier}.</Text>
               {error ? <Text style={styles.error}>{error}</Text> : null}
               <OtpBoxes value={code} onChange={setCode} />
-              <View style={styles.hintCard}>
-                <Text style={styles.kickerNavy}>ON-SCREEN CODE</Text>
-                <Text style={styles.demoCode}>{RESET_CODE}</Text>
-                <Text style={styles.hint}>Demo reset code is 0000.</Text>
-              </View>
+              {demoCode ? (
+                <View style={styles.hintCard}>
+                  <Text style={styles.kickerNavy}>ON-SCREEN CODE</Text>
+                  <Text style={styles.demoCode}>{demoCode}</Text>
+                  <Text style={styles.hint}>Shown only on the test server. Real users get it by SMS.</Text>
+                </View>
+              ) : null}
               <PrimaryButton
                 label="Continue"
                 enabled={code.length === 4}
                 onPress={() => {
-                  if (code !== RESET_CODE) {
-                    setError('That code does not match.');
-                    return;
-                  }
+                  // The server checks the code together with the new password on the next step.
                   setError(null);
                   setStep(2);
                 }}
@@ -115,7 +131,8 @@ export function ResetPasswordScreen({ onBack }: { onBack: () => void }) {
               <Text style={styles.body}>Then sign in with it on the next screen.</Text>
               {error ? <Text style={styles.error}>{error}</Text> : null}
               <Field label="New password" value={password} onChangeText={setPassword} password />
-              <View style={{ height: 12, gap: 6 }}>
+              <View style={{ marginBottom: 8 }}>
+                <Check ok={password.length >= 8} label="At least 8 characters" />
                 <Check ok={/[A-Z]/.test(password)} label="One capital letter" />
                 <Check ok={/\d/.test(password)} label="One number" />
                 <Check ok={/[^A-Za-z0-9]/.test(password)} label="One special character" />
@@ -123,9 +140,26 @@ export function ResetPasswordScreen({ onBack }: { onBack: () => void }) {
               {password.length > 0 && !meetsPolicy(password) ? <Text style={styles.hint}>{POLICY}</Text> : null}
               <View style={{ height: 20 }} />
               <PrimaryButton
-                label="Sign in with it"
-                enabled={meetsPolicy(password)}
-                onPress={onBack}
+                label={busy ? 'Saving…' : 'Sign in with it'}
+                enabled={meetsPolicy(password) && !busy}
+                onPress={async () => {
+                  setError(null);
+                  setBusy(true);
+                  try {
+                    await resetPassword(identifier.trim(), code, password);
+                    onBack();
+                  } catch (err) {
+                    const message = messageOf(err);
+                    if (/code/i.test(message)) {
+                      // Wrong or expired code: send them back to re-enter it.
+                      setCode('');
+                      setStep(1);
+                    }
+                    setError(message);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
               />
             </>
           ) : null}
