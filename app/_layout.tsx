@@ -17,6 +17,7 @@ export default function RootLayout() {
         <Stack.Screen name="invite" />
         <Stack.Screen name="login" />
         <Stack.Screen name="reset" />
+        <Stack.Screen name="locked" />
         <Stack.Screen name="handlers" />
         <Stack.Screen name="pickup" />
         <Stack.Screen name="child-details" />

@@ -8,6 +8,7 @@ export default function LoginRoute() {
       onBack={() => router.back()}
       onForgot={() => router.push('/reset')}
       onSuccess={() => router.replace('/(tabs)')}
+      onLocked={() => router.replace('/locked')}
     />
   );
 }

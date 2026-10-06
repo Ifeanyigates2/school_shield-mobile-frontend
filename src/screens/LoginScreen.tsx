@@ -13,20 +13,26 @@ import { Field, PrimaryButton, Wordmark } from '../components';
 import { colors } from '../theme';
 import { useAndroidBack } from '../useAndroidBack';
 
+const DEMO_PASSWORD = 'password';
+const MAX_ATTEMPTS = 3;
+
 export function LoginScreen({
   onBack,
   onForgot,
   onSuccess,
+  onLocked,
 }: {
   onBack: () => void;
   onForgot: () => void;
   onSuccess: () => void;
+  onLocked: () => void;
 }) {
   const [email, setEmail] = useState('');
   // TODO(ship): drop the hard-coded "Welcome back, Zara" title and the demo password pre-fill.
-  const [password, setPassword] = useState('password');
+  const [password, setPassword] = useState(DEMO_PASSWORD);
   const [hidden, setHidden] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [failedAttempts, setFailedAttempts] = useState(0);
 
   const canSubmit = useMemo(() => email.trim().length > 0 && password.length > 0, [email, password]);
   useAndroidBack(onBack);
@@ -79,6 +85,18 @@ export function LoginScreen({
           onPress={() => {
             if (!canSubmit) {
               setError('Enter your phone number or email, and password.');
+              return;
+            }
+            // TODO(ship): replace the demo password check with the real sign-in call.
+            if (password !== DEMO_PASSWORD) {
+              const attempts = failedAttempts + 1;
+              setFailedAttempts(attempts);
+              if (attempts >= MAX_ATTEMPTS) {
+                onLocked();
+                return;
+              }
+              const left = MAX_ATTEMPTS - attempts;
+              setError(`Wrong password. ${left} ${left === 1 ? 'try' : 'tries'} left before sign-in locks.`);
               return;
             }
             setError(null);
