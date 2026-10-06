@@ -1,12 +1,10 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
-  Alert,
   Platform,
   Pressable,
   ScrollView,
   StatusBar,
   Text,
-  TextInput,
   View,
   Modal,
 } from 'react-native';
@@ -14,11 +12,18 @@ import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../theme';
 import { useAndroidBack } from '../useAndroidBack';
+import { VerifyPhoneFlow } from './VerifyPhoneFlow';
+import { ActiveSessionsScreen, INITIAL_SESSIONS, Session } from './ActiveSessionsScreen';
+import { SignInAttemptsScreen } from './SignInAttemptsScreen';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+type SubView = 'main' | 'verify-phone' | 'sessions' | 'attempts';
+
 interface Props {
   onBack: () => void;
+  /** Opens the shared sign-out sheet owned by the More screen */
+  onLogOut?: () => void;
 }
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
@@ -41,18 +46,30 @@ function SectionLabel({ label }: { label: string }) {
   );
 }
 
-type RowVariant = 'normal' | 'locked' | 'badge' | 'danger';
+type RowTone = 'normal' | 'warning' | 'danger' | 'muted';
 
 interface Row {
   id: string;
   icon: React.ComponentProps<typeof Feather>['name'];
   label: string;
   sublabel: string;
-  variant?: RowVariant;
-  badge?: string;
-  badgeColor?: string;
+  tone?: RowTone;
+  /** Text pill on the right, e.g. VERIFIED or CHECK */
+  pill?: { label: string; bg: string; color: string };
+  /** Small square count badge on the right */
+  count?: string;
+  /** Shows a lock on the right; the row cannot be changed */
+  locked?: boolean;
+  chevron?: boolean;
   onPress?: () => void;
 }
+
+const TONE: Record<RowTone, { pillBg: string; pillBorder: string; icon: string; label: string }> = {
+  normal:  { pillBg: colors.soft, pillBorder: colors.line, icon: colors.navy, label: colors.ink },
+  warning: { pillBg: '#FFFAEB', pillBorder: '#FEDF89', icon: '#DC6803', label: colors.ink },
+  danger:  { pillBg: '#FEF3F2', pillBorder: '#FEE4E2', icon: colors.danger, label: colors.danger },
+  muted:   { pillBg: '#FFFAEB', pillBorder: '#FEF0C7', icon: '#FEC84B', label: colors.mute },
+};
 
 function SettingsCard({ rows }: { rows: Row[] }) {
   return (
@@ -66,13 +83,13 @@ function SettingsCard({ rows }: { rows: Row[] }) {
       }}
     >
       {rows.map((row, index) => {
-        const isDanger = row.variant === 'danger';
-        const isLocked = row.variant === 'locked';
+        const tone = TONE[row.tone ?? 'normal'];
 
         return (
           <View key={row.id}>
             <Pressable
               onPress={row.onPress}
+              disabled={!row.onPress}
               style={({ pressed }) => ({
                 backgroundColor: pressed ? 'rgba(11,31,61,0.04)' : colors.white,
               })}
@@ -92,16 +109,15 @@ function SettingsCard({ rows }: { rows: Row[] }) {
                     width: 36,
                     height: 36,
                     borderRadius: 10,
+                    backgroundColor: tone.pillBg,
+                    borderWidth: 1,
+                    borderColor: tone.pillBorder,
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
                   }}
                 >
-                  <Feather
-                    name={row.icon}
-                    size={17}
-                    color={isDanger ? colors.danger : colors.navy}
-                  />
+                  <Feather name={row.icon} size={16} color={tone.icon} />
                 </View>
 
                 {/* Text */}
@@ -110,19 +126,19 @@ function SettingsCard({ rows }: { rows: Row[] }) {
                     style={{
                       fontSize: 14,
                       fontWeight: '600',
-                      color: isDanger ? colors.danger : colors.ink,
+                      color: tone.label,
                       letterSpacing: -0.2,
                       marginBottom: 1,
                     }}
                   >
                     {row.label}
                   </Text>
-                  <Text style={{ fontSize: 12, color: colors.mute }}>
+                  <Text style={{ fontSize: 12, color: row.tone === 'muted' ? '#98A2B3' : colors.mute }}>
                     {row.sublabel}
                   </Text>
                 </View>
 
-                {/* Right: locked pill / number badge / chevron */}
+                {/* Right: pill / count / lock / chevron */}
                 <View
                   style={{
                     flexDirection: 'row',
@@ -131,54 +147,64 @@ function SettingsCard({ rows }: { rows: Row[] }) {
                     flexShrink: 0,
                   }}
                 >
-                  {isLocked && (
+                  {row.pill && (
                     <View
                       style={{
-                        backgroundColor: '#F2F4F7',
-                        borderRadius: 20,
-                        paddingHorizontal: 9,
-                        paddingVertical: 3,
-                        borderWidth: 1,
-                        borderColor: colors.line,
+                        backgroundColor: row.pill.bg,
+                        borderRadius: 6,
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
                       }}
                     >
                       <Text
                         style={{
                           fontSize: 10,
                           fontWeight: '700',
-                          color: colors.mute,
+                          color: row.pill.color,
                           letterSpacing: 0.4,
                         }}
                       >
-                        LOCKED
+                        {row.pill.label}
                       </Text>
                     </View>
                   )}
 
-                  {row.badge && (
+                  {row.count && (
                     <View
                       style={{
-                        width: 22,
+                        minWidth: 22,
                         height: 22,
-                        borderRadius: 11,
-                        backgroundColor: row.badgeColor ?? colors.navy,
+                        borderRadius: 6,
+                        paddingHorizontal: 6,
+                        backgroundColor: colors.soft,
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}
                     >
-                      <Text
-                        style={{
-                          fontSize: 11,
-                          fontWeight: '700',
-                          color: colors.white,
-                        }}
-                      >
-                        {row.badge}
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.ink }}>
+                        {row.count}
                       </Text>
                     </View>
                   )}
 
-                  <Feather name="chevron-right" size={16} color="#C0C8D4" />
+                  {row.locked && (
+                    <View
+                      style={{
+                        width: 26,
+                        height: 26,
+                        borderRadius: 6,
+                        backgroundColor: colors.soft,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Feather name="lock" size={13} color="#98A2B3" />
+                    </View>
+                  )}
+
+                  {row.chevron && (
+                    <Feather name="chevron-right" size={16} color={colors.ink} />
+                  )}
                 </View>
               </View>
             </Pressable>
@@ -199,13 +225,12 @@ function SettingsCard({ rows }: { rows: Row[] }) {
   );
 }
 
-// ─── Confirm-by-typing modal ──────────────────────────────────────────────────
+// ─── Confirm-by-tapping modal ─────────────────────────────────────────────────
 
 function ConfirmModal({
   visible,
   title,
   body,
-  confirmWord,
   confirmLabel,
   onConfirm,
   onCancel,
@@ -213,14 +238,10 @@ function ConfirmModal({
   visible: boolean;
   title: string;
   body: string;
-  confirmWord: string;
   confirmLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const [typed, setTyped] = useState('');
-  const ready = typed.trim().toLowerCase() === confirmWord.toLowerCase();
-
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <Pressable
@@ -254,32 +275,9 @@ function ConfirmModal({
           >
             {title}
           </Text>
-          <Text style={{ fontSize: 14, color: colors.mute, lineHeight: 20, marginBottom: 20 }}>
+          <Text style={{ fontSize: 14, color: colors.mute, lineHeight: 20, marginBottom: 24 }}>
             {body}
           </Text>
-
-          <Text style={{ fontSize: 12, fontWeight: '600', color: colors.mute, marginBottom: 8 }}>
-            Type <Text style={{ color: colors.ink, fontWeight: '700' }}>"{confirmWord}"</Text> to confirm
-          </Text>
-
-          <TextInput
-            value={typed}
-            onChangeText={setTyped}
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholder={confirmWord}
-            placeholderTextColor="#C0C8D4"
-            style={{
-              height: 48,
-              borderRadius: 12,
-              borderWidth: 1.5,
-              borderColor: ready ? '#12B76A' : colors.line,
-              paddingHorizontal: 14,
-              fontSize: 15,
-              color: colors.ink,
-              marginBottom: 20,
-            }}
-          />
 
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Pressable
@@ -301,24 +299,18 @@ function ConfirmModal({
             </Pressable>
 
             <Pressable
-              onPress={() => { if (ready) { setTyped(''); onConfirm(); } }}
+              onPress={onConfirm}
               style={({ pressed }) => ({
                 flex: 1,
                 height: 48,
                 borderRadius: 12,
-                backgroundColor: ready ? '#D92D20' : '#F2F4F7',
+                backgroundColor: '#D92D20',
                 alignItems: 'center',
                 justifyContent: 'center',
-                opacity: pressed && ready ? 0.85 : 1,
+                opacity: pressed ? 0.85 : 1,
               })}
             >
-              <Text
-                style={{
-                  fontSize: 15,
-                  fontWeight: '700',
-                  color: ready ? colors.white : '#98A2B3',
-                }}
-              >
+              <Text style={{ fontSize: 15, fontWeight: '700', color: colors.white }}>
                 {confirmLabel}
               </Text>
             </Pressable>
@@ -331,54 +323,76 @@ function ConfirmModal({
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
-export function AccountSecurityScreen({ onBack }: Props) {
+export function AccountSecurityScreen({ onBack, onLogOut }: Props) {
   useAndroidBack(onBack);
 
   const topInset = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 48;
-  const [logoutModal, setLogoutModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
+  const [view, setView] = useState<SubView>('main');
+  const [sessions, setSessions] = useState<Session[]>(INITIAL_SESSIONS);
+  const backToMain = useCallback(() => setView('main'), []);
+
+  if (view === 'verify-phone') {
+    return <VerifyPhoneFlow onBack={backToMain} onVerified={backToMain} />;
+  }
+
+  if (view === 'sessions') {
+    return (
+      <ActiveSessionsScreen
+        sessions={sessions}
+        onSignOut={(id) => setSessions((prev) => prev.filter((s) => s.id !== id))}
+        onBack={backToMain}
+      />
+    );
+  }
+
+  if (view === 'attempts') {
+    return <SignInAttemptsScreen onBack={backToMain} />;
+  }
 
   const signingInRows: Row[] = [
     {
       id: 'change-password',
       icon: 'key',
       label: 'Change password',
-      sublabel: 'Last changed 3 weeks ago',
+      sublabel: 'Last changed 12 August',
       onPress: () => {},
     },
     {
       id: 'phone-verification',
       icon: 'phone',
       label: 'Phone verification',
-      sublabel: '+234 803 456 7890 · verified',
-      onPress: () => {},
-    },
-    {
-      id: 'active-sessions',
-      icon: 'clock',
-      label: 'Active sessions',
-      sublabel: 'This phone, and a tablet in Lekki',
-      variant: 'badge',
-      badge: '2',
-      badgeColor: colors.navy,
-      onPress: () => {},
+      sublabel: 'Changed number? tap to verify',
+      pill: { label: 'VERIFIED', bg: '#ECFDF3', color: '#027A48' },
+      onPress: () => setView('verify-phone'),
     },
   ];
 
-  const securityRows: Row[] = [
+  const activityRows: Row[] = [
+    {
+      id: 'login-attempts',
+      icon: 'shield',
+      label: 'Login attempts',
+      sublabel: '1 failed attempt this week',
+      tone: 'warning',
+      pill: { label: 'CHECK', bg: '#FFFAEB', color: '#B54708' },
+      onPress: () => setView('attempts'),
+    },
+    {
+      id: 'active-sessions',
+      icon: 'smartphone',
+      label: 'Active sessions',
+      sublabel: `${sessions.length} device${sessions.length === 1 ? '' : 's'} signed in`,
+      count: String(sessions.length),
+      onPress: () => setView('sessions'),
+    },
     {
       id: 'security-alerts',
       icon: 'shield',
       label: 'Security alerts',
       sublabel: 'Always on, cannot be muted',
-      variant: 'locked',
-    },
-    {
-      id: 'login-attempts',
-      icon: 'alert-triangle',
-      label: 'Login attempts',
-      sublabel: 'One failed attempt, Fri 4 Sep',
-      onPress: () => {},
+      tone: 'muted',
+      locked: true,
     },
   ];
 
@@ -387,16 +401,18 @@ export function AccountSecurityScreen({ onBack }: Props) {
       id: 'logout',
       icon: 'log-out',
       label: 'Log out',
-      sublabel: 'SMS alerts continue to Chidinma',
-      variant: 'danger',
-      onPress: () => setLogoutModal(true),
+      sublabel: 'SMS alerts continue',
+      tone: 'danger',
+      chevron: true,
+      onPress: onLogOut,
     },
     {
       id: 'delete-account',
-      icon: 'trash-2',
+      icon: 'lock',
       label: 'Delete account',
-      sublabel: 'Handover records to Chidinma',
-      variant: 'danger',
+      sublabel: 'Handover records stay with the school',
+      tone: 'danger',
+      chevron: true,
       onPress: () => setDeleteModal(true),
     },
   ];
@@ -469,17 +485,17 @@ export function AccountSecurityScreen({ onBack }: Props) {
             marginBottom: 28,
           }}
         >
-          Destructive actions sit at the bottom and each one is confirmed by typing.
+          Destructive actions sit at the bottom and each one is confirmed by tapping.
         </Text>
 
         {/* SIGNING IN */}
         <SectionLabel label="Signing in" />
         <SettingsCard rows={signingInRows} />
 
-        {/* SECURITY */}
+        {/* ACTIVITY */}
         <View style={{ marginTop: 24 }}>
-          <SectionLabel label="Security" />
-          <SettingsCard rows={securityRows} />
+          <SectionLabel label="Activity" />
+          <SettingsCard rows={activityRows} />
         </View>
 
         {/* ACCOUNT (destructive) */}
@@ -491,18 +507,16 @@ export function AccountSecurityScreen({ onBack }: Props) {
         {/* Info card */}
         <View
           style={{
-            marginTop: 12,
-            backgroundColor: '#EFF6FF',
+            marginTop: 16,
+            backgroundColor: '#FEF3F2',
             borderRadius: 14,
             padding: 16,
-            borderWidth: 1,
-            borderColor: '#DBEAFE',
           }}
         >
           <Text
             style={{
               fontSize: 14,
-              color: '#1E40AF',
+              color: '#D92D20',
               lineHeight: 21,
             }}
           >
@@ -511,23 +525,11 @@ export function AccountSecurityScreen({ onBack }: Props) {
         </View>
       </ScrollView>
 
-      {/* ── Log out confirm modal ─────────────────────────────────────── */}
-      <ConfirmModal
-        visible={logoutModal}
-        title="Log out?"
-        body="SMS alerts will continue going to Chidinma while you are logged out. You can log back in any time."
-        confirmWord="logout"
-        confirmLabel="Log out"
-        onConfirm={() => setLogoutModal(false)}
-        onCancel={() => setLogoutModal(false)}
-      />
-
       {/* ── Delete account confirm modal ──────────────────────────────── */}
       <ConfirmModal
         visible={deleteModal}
         title="Delete account?"
         body="This permanently deletes your account and preferences. Greenfield Academy will retain handover records as their safeguarding obligation."
-        confirmWord="delete"
         confirmLabel="Delete"
         onConfirm={() => setDeleteModal(false)}
         onCancel={() => setDeleteModal(false)}
