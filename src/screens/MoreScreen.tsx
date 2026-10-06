@@ -17,6 +17,12 @@ import { AccountSecurityScreen } from './AccountSecurityScreen';
 import { AlertsScreen } from './AlertsScreen';
 import { UnauthorizedPickupScreen } from './UnauthorizedPickupScreen';
 import { NotificationsScreen } from './NotificationsScreen';
+import { ProfileScreen } from './ProfileScreen';
+import { FamilySettingsScreen } from './FamilySettingsScreen';
+import { ContactSchoolScreen } from './ContactSchoolScreen';
+import { SchoolDetailsScreen } from './SchoolDetailsScreen';
+import { HelpScreen } from './HelpScreen';
+import { SignOutSheet } from '../components/SignOutSheet';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -29,14 +35,16 @@ type MenuRow = {
   sublabel: string;
   badge?: string;
   badgeColor?: string;
+  badgeTextColor?: string;
   danger?: boolean;
   onPress?: () => void;
 };
 
 // --- Sub-components -----------------------------------------------------------
 
-function ProfileCard() {
+function ProfileCard({ onPress }: { onPress: () => void }) {
   return (
+    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
     <View
       style={{
         backgroundColor: colors.white,
@@ -88,6 +96,7 @@ function ProfileCard() {
         </Text>
       </View>
     </View>
+    </Pressable>
   );
 }
 
@@ -109,14 +118,20 @@ function SectionLabel({ label }: { label: string }) {
   );
 }
 
-function MenuCard({ rows }: { rows: MenuRow[] }) {
+function MenuCard({
+  rows,
+  borderColor = colors.line,
+}: {
+  rows: MenuRow[];
+  borderColor?: string;
+}) {
   return (
     <View
       style={{
         backgroundColor: colors.white,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: colors.line,
+        borderColor,
         overflow: 'hidden',
       }}
     >
@@ -144,6 +159,9 @@ function MenuCard({ rows }: { rows: MenuRow[] }) {
                   width: 36,
                   height: 36,
                   borderRadius: 10,
+                  backgroundColor: row.danger ? '#FEF3F2' : colors.soft,
+                  borderWidth: 1,
+                  borderColor: row.danger ? '#FEE4E2' : colors.line,
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
@@ -151,7 +169,7 @@ function MenuCard({ rows }: { rows: MenuRow[] }) {
               >
                 <Feather
                   name={row.icon}
-                  size={17}
+                  size={16}
                   color={row.danger ? colors.danger : colors.navy}
                 />
               </View>
@@ -186,7 +204,7 @@ function MenuCard({ rows }: { rows: MenuRow[] }) {
                 {row.badge ? (
                   <View
                     style={{
-                      backgroundColor: row.badgeColor ?? '#3B82F6',
+                      backgroundColor: row.badgeColor ?? '#FEE4E2',
                       borderRadius: 12,
                       paddingHorizontal: 8,
                       paddingVertical: 3,
@@ -194,9 +212,10 @@ function MenuCard({ rows }: { rows: MenuRow[] }) {
                   >
                     <Text
                       style={{
-                        fontSize: 11,
+                        fontSize: 10,
                         fontWeight: '700',
-                        color: colors.white,
+                        color: row.badgeTextColor ?? '#B42318',
+                        letterSpacing: 0.3,
                       }}
                     >
                       {row.badge}
@@ -229,13 +248,33 @@ function MenuCard({ rows }: { rows: MenuRow[] }) {
 
 // --- Main Screen --------------------------------------------------------------
 
-export function MoreScreen() {
-  type Subscreen = 'main' | 'account-security' | 'alerts' | 'unauthorized-pickup' | 'notifications';
+interface MoreScreenProps {
+  onOpenChild?: (childId: string) => void;
+  onOpenHandler?: (handlerId: string) => void;
+  onSignOut?: () => void;
+}
+
+export function MoreScreen({ onOpenChild, onOpenHandler, onSignOut }: MoreScreenProps = {}) {
+  type Subscreen =
+    | 'main'
+    | 'profile'
+    | 'account-security'
+    | 'alerts'
+    | 'unauthorized-pickup'
+    | 'notifications'
+    | 'family-settings'
+    | 'contact-school'
+    | 'school-details'
+    | 'help';
   const [subscreen, setSubscreen] = useState<Subscreen>('main');
+  // Set when a screen is pushed on top of another sub-screen (e.g. Help → Contact school)
+  const [detailParent, setDetailParent] = useState<Subscreen | null>(null);
+  const [signOutSheet, setSignOutSheet] = useState(false);
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
   const detailSlide = useRef(new Animated.Value(SCREEN_WIDTH)).current;
 
   const openSubscreen = (screen: Subscreen) => {
+    setDetailParent(null);
     setSubscreen(screen);
     slideAnim.setValue(SCREEN_WIDTH);
     Animated.spring(slideAnim, {
@@ -246,7 +285,8 @@ export function MoreScreen() {
     }).start();
   };
 
-  const openDetail = (screen: Subscreen) => {
+  const openDetail = (screen: Subscreen, parent: Subscreen) => {
+    setDetailParent(parent);
     setSubscreen(screen);
     detailSlide.setValue(SCREEN_WIDTH);
     Animated.spring(detailSlide, {
@@ -270,17 +310,40 @@ export function MoreScreen() {
       toValue: SCREEN_WIDTH,
       duration: 220,
       useNativeDriver: true,
-    }).start(() => setSubscreen('alerts'));
+    }).start(() => {
+      setSubscreen(detailParent ?? 'main');
+      setDetailParent(null);
+    });
   };
 
   const topInset =
     Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 48;
 
+  const signOutSheetEl = (
+    <SignOutSheet
+      visible={signOutSheet}
+      onCancel={() => setSignOutSheet(false)}
+      onSignOut={() => {
+        setSignOutSheet(false);
+        onSignOut?.();
+      }}
+    />
+  );
+
   // Sub-screen routing
+  if (subscreen === 'profile') {
+    return (
+      <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
+        <ProfileScreen onBack={closeSubscreen} />
+      </Animated.View>
+    );
+  }
+
   if (subscreen === 'account-security') {
     return (
       <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
-        <AccountSecurityScreen onBack={closeSubscreen} />
+        <AccountSecurityScreen onBack={closeSubscreen} onLogOut={() => setSignOutSheet(true)} />
+        {signOutSheetEl}
       </Animated.View>
     );
   }
@@ -291,7 +354,7 @@ export function MoreScreen() {
         <AlertsScreen
           onBack={closeSubscreen}
           onOpenAlert={(id) => {
-            if (id === 'unauthorized-pickup') openDetail('unauthorized-pickup');
+            if (id === 'unauthorized-pickup') openDetail('unauthorized-pickup', 'alerts');
           }}
         />
       </Animated.View>
@@ -314,6 +377,47 @@ export function MoreScreen() {
     );
   }
 
+  if (subscreen === 'family-settings') {
+    return (
+      <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
+        <FamilySettingsScreen
+          onBack={closeSubscreen}
+          onOpenChild={onOpenChild}
+          onOpenHandler={onOpenHandler}
+        />
+      </Animated.View>
+    );
+  }
+
+  if (subscreen === 'school-details') {
+    return (
+      <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
+        <SchoolDetailsScreen onBack={closeSubscreen} />
+      </Animated.View>
+    );
+  }
+
+  if (subscreen === 'contact-school') {
+    return (
+      <Animated.View
+        style={{ flex: 1, transform: [{ translateX: detailParent ? detailSlide : slideAnim }] }}
+      >
+        <ContactSchoolScreen onBack={detailParent ? closeDetail : closeSubscreen} />
+      </Animated.View>
+    );
+  }
+
+  if (subscreen === 'help') {
+    return (
+      <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
+        <HelpScreen
+          onBack={closeSubscreen}
+          onContactSchool={() => openDetail('contact-school', 'help')}
+        />
+      </Animated.View>
+    );
+  }
+
   const needsYouRows: MenuRow[] = [
     {
       id: 'alerts',
@@ -321,77 +425,65 @@ export function MoreScreen() {
       label: 'Alerts',
       sublabel: 'Security, pickup, child and school',
       badge: '2 NEW',
-      badgeColor: '#3B82F6',
       onPress: () => openSubscreen('alerts'),
     },
   ];
 
-  const familyRows: MenuRow[] = [
-    {
-      id: 'profile',
-      icon: 'user',
-      label: 'Profile',
-      sublabel: 'Name, phone, email, photo',
-    },
-    {
-      id: 'family-settings',
-      icon: 'users',
-      label: 'Family settings',
-      sublabel: 'Children, guardians, handlers',
-    },
-  ];
-
-  const schoolRows: MenuRow[] = [
+  const familySchoolRows: MenuRow[] = [
     {
       id: 'school-details',
       icon: 'home',
       label: 'School details',
-      sublabel: 'Gates, windows, hours, calendar',
+      sublabel: 'Windows, gates, routes, hours etc',
+      onPress: () => openSubscreen('school-details'),
     },
     {
       id: 'contact-school',
       icon: 'phone',
       label: 'Contact school',
       sublabel: 'Call or email the office',
+      onPress: () => openSubscreen('contact-school'),
+    },
+    {
+      id: 'family-settings',
+      icon: 'user',
+      label: 'Family settings',
+      sublabel: 'Guardians, children, handlers',
+      onPress: () => openSubscreen('family-settings'),
     },
   ];
 
   const accountRows: MenuRow[] = [
     {
+      id: 'account-security',
+      icon: 'shield',
+      label: 'Account & security',
+      sublabel: 'Password, phone, sessions',
+      onPress: () => openSubscreen('account-security'),
+    },
+    {
       id: 'notifications',
       icon: 'bell',
       label: 'Notifications',
-      sublabel: 'Channels and what you are told',
+      sublabel: 'What we send and how',
       onPress: () => openSubscreen('notifications'),
-    },
-    {
-      id: 'account-security',
-      icon: 'lock',
-      label: 'Account & security',
-      sublabel: 'Password, sessions, deletion',
-      onPress: () => openSubscreen('account-security'),
     },
     {
       id: 'help',
       icon: 'help-circle',
       label: 'Help',
-      sublabel: 'Six common questions',
+      sublabel: 'How SchoolShield works',
+      onPress: () => openSubscreen('help'),
     },
   ];
 
-  const destructiveRows: MenuRow[] = [
+  const logoutRows: MenuRow[] = [
     {
       id: 'logout',
       icon: 'log-out',
       label: 'Log out',
-      sublabel: 'SMS alerts continue to Chidinma',
-      danger: true,
-    },
-    {
-      id: 'delete-account',
-      icon: 'trash-2',
-      label: 'Delete account',
-      sublabel: 'Handover records to Chidinma',
+      sublabel: 'SMS alerts continue',
+      onPress: () => setSignOutSheet(true),
       danger: true,
     },
   ];
@@ -415,25 +507,14 @@ export function MoreScreen() {
             fontWeight: '800',
             color: colors.ink,
             letterSpacing: -0.5,
-            marginBottom: 6,
+            marginBottom: 20,
           }}
         >
           More
         </Text>
-        <Text
-          style={{
-            fontSize: 14,
-            color: colors.mute,
-            lineHeight: 20,
-            marginBottom: 24,
-          }}
-        >
-          Everything that is not today. Pickup and drop-off are deliberately
-          absent — they live on Home and Children, where a parent already is.
-        </Text>
 
         {/* -- Profile Card ---------------------------------------------- */}
-        <ProfileCard />
+        <ProfileCard onPress={() => openSubscreen('profile')} />
 
         {/* -- Needs You ------------------------------------------------- */}
         <View style={{ marginTop: 24 }}>
@@ -441,16 +522,10 @@ export function MoreScreen() {
           <MenuCard rows={needsYouRows} />
         </View>
 
-        {/* -- Your Family ----------------------------------------------- */}
+        {/* -- Family & School ------------------------------------------- */}
         <View style={{ marginTop: 24 }}>
-          <SectionLabel label="Your family" />
-          <MenuCard rows={familyRows} />
-        </View>
-
-        {/* -- School ---------------------------------------------------- */}
-        <View style={{ marginTop: 24 }}>
-          <SectionLabel label="School" />
-          <MenuCard rows={schoolRows} />
+          <SectionLabel label="Family & school" />
+          <MenuCard rows={familySchoolRows} />
         </View>
 
         {/* -- Account --------------------------------------------------- */}
@@ -459,9 +534,9 @@ export function MoreScreen() {
           <MenuCard rows={accountRows} />
         </View>
 
-        {/* -- Destructive Actions --------------------------------------- */}
-        <View style={{ marginTop: 12 }}>
-          <MenuCard rows={destructiveRows} />
+        {/* -- Log out --------------------------------------------------- */}
+        <View style={{ marginTop: 16 }}>
+          <MenuCard rows={logoutRows} borderColor="#FDA29B" />
         </View>
 
         {/* -- Footer ---------------------------------------------------- */}
@@ -477,6 +552,7 @@ export function MoreScreen() {
           School Shield · Guardian App
         </Text>
       </ScrollView>
+      {signOutSheetEl}
     </View>
   );
 }
