@@ -5,7 +5,7 @@ import { colors } from '../theme';
 
 export type PillTone = 'neutral' | 'green' | 'red' | 'amber';
 
-const PILL_TONES: Record<PillTone, { bg: string; icon: string }> = {
+export const PILL_TONES: Record<PillTone, { bg: string; icon: string }> = {
   neutral: { bg: colors.soft, icon: colors.navy },
   green: { bg: '#ECFDF3', icon: '#039855' },
   red: { bg: '#FEF3F2', icon: '#D92D20' },

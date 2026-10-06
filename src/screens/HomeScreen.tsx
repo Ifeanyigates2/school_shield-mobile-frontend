@@ -21,6 +21,9 @@ import { PickupFlow } from './PickupFlow';
 import { ActivityScreen } from './ActivityScreen';
 import { HandoverRecordScreen } from './HandoverRecordScreen';
 import { MoreScreen } from './MoreScreen';
+import { BusJourneyFlow } from './BusJourneyFlow';
+import { BusJourneyCard } from '../components/BusJourneyCard';
+import { BUS_JOURNEY, BusStage, formatClock, initialBusStage, nextBusStage } from '../data/busJourney';
 import {
   HomeHeader,
   HomeStatusBanner,
@@ -39,7 +42,7 @@ export function HomeScreen() {
   const { guardianName, children, handlers } = useFamily();
   const [activeTab, setActiveTab] = useState<'home' | 'children' | 'activity' | 'more'>('home');
   const [operationalState, setOperationalState] = useState<OperationalState>('active');
-  const [subflow, setSubflow] = useState<'none' | 'handlers' | 'pickup' | 'child-details' | 'todays-plan' | 'handover-record'>('none');
+  const [subflow, setSubflow] = useState<'none' | 'handlers' | 'pickup' | 'child-details' | 'todays-plan' | 'handover-record' | 'bus-journey'>('none');
   const [selectedActivityId, setSelectedActivityId] = useState<string>('amara-picked-up');
   const [selectedChildId, setSelectedChildId] = useState<string>(children[0]?.id ?? 'amara');
   const sessionChildIds = children.map((c) => c.id);
@@ -50,6 +53,25 @@ export function HomeScreen() {
   const [codeOverlayMode, setCodeOverlayMode] = useState<'qr' | 'digits'>('qr');
   const [showNotifications, setShowNotifications] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [busStage, setBusStage] = useState<BusStage>(() => initialBusStage());
+  const [busHomeAt, setBusHomeAt] = useState<string>();
+  const [busAlertedAt, setBusAlertedAt] = useState<string>();
+  const [busRemindAt, setBusRemindAt] = useState<string | null>(null);
+  const busChild = children.find((c) => c.id === BUS_JOURNEY.childId);
+  const busChildName = busChild?.name.split(' ')[0] ?? '';
+
+  // Long-press cycles the stage so every screen can be reached without waiting for 3:04 PM
+  const busJourneyCard = busChild ? (
+    <BusJourneyCard
+      childName={busChildName}
+      stage={busStage}
+      homeAt={busHomeAt}
+      alertedAt={busAlertedAt}
+      remindAt={busRemindAt}
+      onPress={() => setSubflow('bus-journey')}
+      onLongPress={() => setBusStage((stage) => nextBusStage(stage))}
+    />
+  ) : null;
 
   // Subflow navigation
   if (subflow === 'child-details') {
@@ -136,6 +158,36 @@ export function HomeScreen() {
     );
   }
 
+  if (subflow === 'bus-journey' && busChild) {
+    return (
+      <BusJourneyFlow
+        childName={busChildName}
+        stage={busStage}
+        homeAt={busHomeAt}
+        alertedAt={busAlertedAt}
+        onBack={() => setSubflow('none')}
+        onConfirmHome={() => {
+          setBusHomeAt(formatClock(new Date()));
+          setBusRemindAt(null);
+          setBusStage('closed');
+        }}
+        onRemindLater={() => {
+          setBusRemindAt(formatClock(new Date(Date.now() + 15 * 60 * 1000)));
+          setSubflow('none');
+        }}
+        onReportNotArrived={() => {
+          setBusAlertedAt(formatClock(new Date()));
+          setBusRemindAt(null);
+          setBusStage('escalated');
+        }}
+        onViewRecord={() => {
+          setSelectedChildId(busChild.id);
+          setSubflow('child-details');
+        }}
+      />
+    );
+  }
+
   if (subflow === 'handover-record') {
     return (
       <HandoverRecordScreen
@@ -165,6 +217,7 @@ export function HomeScreen() {
             initialChildId={selectedChildId}
             onSelectChild={(id) => setSelectedChildId(id)}
             onOpenHandlers={() => setSubflow('handlers')}
+            busJourney={busChild ? { childId: busChild.id, stage: busStage, card: busJourneyCard } : undefined}
             onOpenPickup={(id) => {
               const next = eligibleHandlers(handlers, id, 'pickup')[0];
               setSelectedChildId(id);
@@ -223,6 +276,8 @@ export function HomeScreen() {
               operationalState={operationalState}
               onManageDropoff={handlePlanDropoff}
             />
+
+            {busJourneyCard}
 
             <HomeChildrenSection
               operationalState={operationalState}

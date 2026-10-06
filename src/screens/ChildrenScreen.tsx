@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import {
   Linking,
   Platform,
@@ -13,6 +13,8 @@ import { Feather } from '@expo/vector-icons';
 import { FigmaAvatar } from '../components';
 import { CHILDREN, HANDLERS } from '../data/family';
 import { useFamily } from '../data/FamilyContext';
+import { BusStage } from '../data/busJourney';
+import { busStagePill } from '../components/BusJourneyCard';
 
 export interface ChildrenScreenProps {
   onSelectChild?: (childId: string) => void;
@@ -20,6 +22,8 @@ export interface ChildrenScreenProps {
   onOpenPickup: (childId: string) => void;
   initialChildId?: string;
   initialMode?: 'pickup' | 'delayed';
+  /** Child riding a bus route today, with the card that opens their journey */
+  busJourney?: { childId: string; stage: BusStage; card: ReactNode };
 }
 
 export function ChildrenScreen({
@@ -28,6 +32,7 @@ export function ChildrenScreen({
   onOpenPickup,
   initialChildId,
   initialMode = 'pickup',
+  busJourney,
 }: ChildrenScreenProps) {
   let family;
   try {
@@ -40,6 +45,14 @@ export function ChildrenScreen({
   const [mode, setMode] = useState<'pickup' | 'delayed'>(initialMode);
 
   const topInset = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) : 48;
+
+  // David rides the bus, so his pill follows the journey instead of the gate demo mode
+  const davidPill =
+    busJourney?.childId === 'david'
+      ? busStagePill(busJourney.stage)
+      : mode === 'pickup'
+        ? { label: 'AT SCHOOL', bg: '#E7F6EC', color: '#027A48' }
+        : { label: 'COLLECTED', bg: '#EBF3FA', color: '#026AA2' };
 
   return (
     <View className="flex-1 bg-canvas">
@@ -203,6 +216,9 @@ export function ChildrenScreen({
           </View>
         )}
 
+        {/* BUS JOURNEY */}
+        {busJourney?.card}
+
         {/* CHILDREN CARDS LIST */}
         {/* Child 1: Amara Okafor */}
         {children.find((c) => c.id === 'amara') && (
@@ -275,7 +291,7 @@ export function ChildrenScreen({
             <View className="flex-row justify-start mb-2">
               <View
                 style={{
-                  backgroundColor: mode === 'pickup' ? '#E7F6EC' : '#EBF3FA',
+                  backgroundColor: davidPill.bg,
                   paddingHorizontal: 10,
                   paddingVertical: 4,
                   borderRadius: 999,
@@ -283,13 +299,13 @@ export function ChildrenScreen({
               >
                 <Text
                   style={{
-                    color: mode === 'pickup' ? '#027A48' : '#026AA2',
+                    color: davidPill.color,
                     fontSize: 10,
                     fontWeight: '800',
                     letterSpacing: 0.5,
                   }}
                 >
-                  {mode === 'pickup' ? 'AT SCHOOL' : 'COLLECTED'}
+                  {davidPill.label}
                 </Text>
               </View>
             </View>
